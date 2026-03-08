@@ -246,7 +246,7 @@ export const Sidebar: FunctionComponent<SidebarProps> = ({
         </button>
         {state === 'expanded' && (
           <span class="gh-lsp-sidebar__title">
-            {data ? data.signature.split('(')[0].trim() : 'Code Intelligence'}
+            {data ? (data.signature.split('(')[0] ?? '').trim() : 'Code Intelligence'}
           </span>
         )}
       </div>

@@ -11,6 +11,7 @@ import { LspRouter } from './lsp-router';
 import { getSettings, saveSettings } from '../shared/settings';
 import { isExtensionMessage, isLspRequest } from '../shared/messages';
 import { DEFAULT_CACHE_TTL_MS } from '../shared/constants';
+import browser, { type Runtime, type Storage } from '../shared/browser';
 import type {
   ExtensionMessage,
   ExtensionSettings,
@@ -101,31 +102,26 @@ async function ensureInitialized(): Promise<void> {
 
 // ─── Message dispatch ────────────────────────────────────────────────────────
 
-chrome.runtime.onMessage.addListener(
+browser.runtime.onMessage.addListener(
   (
     message: unknown,
-    _sender: chrome.runtime.MessageSender,
-    sendResponse: (response?: ExtensionMessage) => void,
-  ): boolean => {
+    _sender: Runtime.MessageSender,
+  ): Promise<ExtensionMessage | undefined> | undefined => {
     if (!isExtensionMessage(message)) {
-      return false;
+      return undefined;
     }
 
-    void dispatchMessage(message, sendResponse);
-    return true; // Keep channel open for async sendResponse
+    return dispatchMessageAsync(message);
   },
 );
 
-async function dispatchMessage(
+async function dispatchMessageAsync(
   message: ExtensionMessage,
-  sendResponse: (response?: ExtensionMessage) => void,
-): Promise<void> {
+): Promise<ExtensionMessage | undefined> {
   try {
     if (isLspRequest(message)) {
       await ensureInitialized();
-      const response = await lspRouter!.handleRequest(message);
-      sendResponse(response);
-      return;
+      return await lspRouter!.handleRequest(message);
     }
 
     switch (message.type) {
@@ -141,6 +137,8 @@ async function dispatchMessage(
   } catch (error) {
     console.error('[gh-lsp] Message dispatch error:', error);
   }
+
+  return undefined;
 }
 
 // ─── Extension toggle ────────────────────────────────────────────────────────
@@ -161,7 +159,7 @@ async function handleExtensionToggle(enabled: boolean): Promise<void> {
 
 // ─── Keyboard commands ───────────────────────────────────────────────────────
 
-chrome.commands.onCommand.addListener((command: string) => {
+browser.commands.onCommand.addListener((command: string) => {
   void handleCommand(command);
 });
 
@@ -190,9 +188,9 @@ async function handleCommand(command: string): Promise<void> {
 
 // ─── Settings change propagation ─────────────────────────────────────────────
 
-chrome.storage.onChanged.addListener(
+browser.storage.onChanged.addListener(
   (
-    changes: Record<string, chrome.storage.StorageChange>,
+    changes: Record<string, Storage.StorageChange>,
     areaName: string,
   ) => {
     if (areaName !== 'sync') {
@@ -244,20 +242,20 @@ function computeSettingsDiff(
 // ─── Tab messaging helpers ───────────────────────────────────────────────────
 
 async function forwardCommandToActiveTab(command: string): Promise<void> {
-  const tabs = await chrome.tabs.query({ active: true, currentWindow: true });
+  const tabs = await browser.tabs.query({ active: true, currentWindow: true });
   const tab = tabs[0];
   if (tab?.id != null) {
-    chrome.tabs.sendMessage(tab.id, { command }).catch(() => {
+    browser.tabs.sendMessage(tab.id, { command }).catch(() => {
       // Tab may not have content script loaded
     });
   }
 }
 
 function broadcastToGitHubTabs(message: ExtensionMessage): void {
-  chrome.tabs.query({ url: 'https://github.com/*' }, (tabs) => {
+  void browser.tabs.query({ url: 'https://github.com/*' }).then((tabs) => {
     for (const tab of tabs) {
       if (tab.id != null) {
-        chrome.tabs.sendMessage(tab.id, message).catch(() => {
+        browser.tabs.sendMessage(tab.id, message).catch(() => {
           // Tab may not have content script loaded yet
         });
       }

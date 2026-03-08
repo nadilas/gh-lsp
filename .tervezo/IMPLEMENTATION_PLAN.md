@@ -54,36 +54,36 @@ Content Script (GitHub DOM) <-> Background Service Worker <-> Web Workers (WASM 
 
 - [x] Implement page detector (`src/content/page-detector.ts`): URL pattern matching for blob, PR files, compare views; Turbo navigation detection
 - [x] Implement DOM observer (`src/content/dom-observer.ts`): MutationObserver setup on code container, detect line additions/removals
-- [ ] Implement token detector (`src/content/token-detector.ts`): hover debouncing, mouse event handling, position calculation (line + character offset)
-- [ ] Implement messaging layer (`src/content/messaging.ts`): typed message sending to background, response handling, request cancellation
-- [ ] Implement content script entry point (`src/content/index.ts`): orchestrate page detection, DOM observation, token detection, messaging
-- [ ] Write unit tests for page detector and token detector
+- [x] Implement token detector (`src/content/token-detector.ts`): hover debouncing, mouse event handling, position calculation (line + character offset)
+- [x] Implement messaging layer (`src/content/messaging.ts`): typed message sending to background, response handling, request cancellation
+- [x] Implement content script entry point (`src/content/index.ts`): orchestrate page detection, DOM observation, token detection, messaging
+- [x] Write unit tests for page detector and token detector
 
 ### Phase 6: UI Renderer — Popover
 
-- [ ] Implement Shadow DOM mount (`src/ui/mount.ts`): create shadow root, inject styles, mount Preact app
-- [ ] Implement popover positioning (`src/ui/popover/positioning.ts`): anchor to token, viewport boundary detection, flip/shift logic
-- [ ] Implement Popover component (`src/ui/popover/Popover.tsx`): display hover content, dismiss on mouse-out/Escape/scroll, pin support
-- [ ] Implement display components: SignatureDisplay, MarkdownRenderer, ParameterList, DefinitionLink, LoadingState, ErrorState
-- [ ] Implement theme detection and CSS variables (`src/ui/styles/theme.css`)
-- [ ] Write unit tests for popover positioning logic
+- [x] Implement Shadow DOM mount (`src/ui/mount.ts`): create shadow root, inject styles, mount Preact app
+- [x] Implement popover positioning (`src/ui/popover/positioning.ts`): anchor to token, viewport boundary detection, flip/shift logic
+- [x] Implement Popover component (`src/ui/popover/Popover.tsx`): display hover content, dismiss on mouse-out/Escape/scroll, pin support
+- [x] Implement display components: SignatureDisplay, MarkdownRenderer, ParameterList, DefinitionLink, LoadingState, ErrorState
+- [x] Implement theme detection and CSS variables (`src/ui/styles/theme.css`)
+- [x] Write unit tests for popover positioning logic
 
 ### Phase 7: UI Renderer — Sidebar
 
-- [ ] Implement Sidebar component (`src/ui/sidebar/Sidebar.tsx`): dockable panel (right/left/top/bottom), collapse/expand, smooth transitions
-- [ ] Implement resize handler (`src/ui/sidebar/resize.ts`): drag-to-resize with min/max bounds
-- [ ] Integrate sidebar with content script: update on hover, respect display mode setting
+- [x] Implement Sidebar component (`src/ui/sidebar/Sidebar.tsx`): dockable panel (right/left/top/bottom), collapse/expand, smooth transitions
+- [x] Implement resize handler (`src/ui/sidebar/resize.ts`): drag-to-resize with min/max bounds
+- [x] Integrate sidebar with content script: update on hover, respect display mode setting
 
 ### Phase 8: Extension Pages
 
-- [ ] Implement Popup page (`src/pages/popup/`): status display, quick toggles, language indicator, link to options
-- [ ] Implement Options page (`src/pages/options/`): display mode, sidebar position, language toggles, PAT configuration, performance settings
-- [ ] Wire settings changes to `chrome.storage.sync` with auto-save and live propagation via `chrome.storage.onChanged`
+- [x] Implement Popup page (`src/pages/popup/`): status display, quick toggles, language indicator, link to options
+- [x] Implement Options page (`src/pages/options/`): display mode, sidebar position, language toggles, PAT configuration, performance settings
+- [x] Wire settings changes to `chrome.storage.sync` with auto-save and live propagation via `chrome.storage.onChanged`
 - [x] Implement keyboard shortcut handlers (toggle extension, toggle sidebar, pin popover)
 
 ### Phase 9: Cross-Browser Support
 
-- [ ] Add `webextension-polyfill` for API normalization
+- [x] Add `webextension-polyfill` for API normalization
 - [ ] Create Safari build step using `safari-web-extension-converter`
 - [ ] Verify WASM loading and full extension flow in Safari
 

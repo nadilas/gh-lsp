@@ -3,11 +3,9 @@ import { h, render } from 'preact';
 import { Sidebar, type SidebarProps } from '../../../../src/ui/sidebar/Sidebar';
 import type {
   SidebarPosition,
-  SidebarState,
   HoverDisplayData,
   ExtensionError,
 } from '../../../../src/shared/types';
-import { SIDEBAR_MIN_SIZE_PX } from '../../../../src/shared/constants';
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 

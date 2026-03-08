@@ -197,7 +197,7 @@ describe('onThemeChange', () => {
 
     // Simulate system theme change to dark
     mockMediaQuery.matches = true;
-    changeHandler?.({ matches: true } as MediaQueryListEvent);
+    (changeHandler as unknown as (e: MediaQueryListEvent) => void)({ matches: true } as MediaQueryListEvent);
 
     expect(callback).toHaveBeenCalledWith('dark');
   });

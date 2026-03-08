@@ -18,6 +18,7 @@ import {
   createCancelRequest,
   isExtensionMessage,
 } from '@shared/messages';
+import browser from '@shared/browser';
 
 // ─── Types ──────────────────────────────────────────────────────────────────
 
@@ -49,7 +50,7 @@ const DEFAULT_REQUEST_TIMEOUT_MS = 10_000;
 // ─── ContentMessaging ───────────────────────────────────────────────────────
 
 /**
- * Content-side messaging layer that wraps chrome.runtime.sendMessage for
+ * Content-side messaging layer that wraps browser.runtime.sendMessage for
  * type-safe LSP request/response handling. Tracks pending requests for
  * cancellation and timeout, and listens for background-initiated notifications.
  */
@@ -126,7 +127,7 @@ export class ContentMessaging {
 
     // Send cancel to background so it can abort the LSP request
     const cancelMessage = createCancelRequest(requestId);
-    chrome.runtime.sendMessage(cancelMessage).catch(() => {
+    browser.runtime.sendMessage(cancelMessage).catch(() => {
       // Fire-and-forget: if cancel fails, the request is already cleaned up
     });
 
@@ -143,7 +144,7 @@ export class ContentMessaging {
   cancelAll(): void {
     for (const [requestId, pending] of this.pending) {
       const cancelMessage = createCancelRequest(requestId);
-      chrome.runtime.sendMessage(cancelMessage).catch(() => {});
+      browser.runtime.sendMessage(cancelMessage).catch(() => {});
       clearTimeout(pending.timer);
       pending.reject(new Error(`Request ${requestId} cancelled`));
     }
@@ -177,10 +178,10 @@ export class ContentMessaging {
       }
     };
 
-    chrome.runtime.onMessage.addListener(listener);
+    browser.runtime.onMessage.addListener(listener);
 
     const cleanup = () => {
-      chrome.runtime.onMessage.removeListener(listener);
+      browser.runtime.onMessage.removeListener(listener);
       this.listenerCleanup = null;
     };
 
@@ -235,9 +236,9 @@ export class ContentMessaging {
         timer,
       });
 
-      // Send via chrome.runtime.sendMessage — response arrives in the
+      // Send via browser.runtime.sendMessage — response arrives in the
       // callback (Promise resolution in MV3)
-      chrome.runtime
+      browser.runtime
         .sendMessage(message)
         .then((response: unknown) => {
           // Clean up pending tracking

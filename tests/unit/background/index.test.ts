@@ -9,14 +9,13 @@ const listeners: {
   onMessage: Array<
     (
       message: unknown,
-      sender: chrome.runtime.MessageSender,
-      sendResponse: (response?: unknown) => void,
-    ) => boolean
+      sender: Record<string, unknown>,
+    ) => unknown
   >;
   onCommand: Array<(command: string) => void>;
   onChanged: Array<
     (
-      changes: Record<string, chrome.storage.StorageChange>,
+      changes: Record<string, { oldValue?: unknown; newValue?: unknown }>,
       areaName: string,
     ) => void
   >;
@@ -28,15 +27,7 @@ const listeners: {
 
 const tabsSendMessage = vi.fn(async () => undefined);
 const defaultTabs = [{ id: 1 }, { id: 2 }];
-const tabsQuery = vi.fn(
-  (_query: unknown, callback?: (tabs: { id?: number }[]) => void) => {
-    if (callback) {
-      callback(defaultTabs);
-      return undefined;
-    }
-    return Promise.resolve(defaultTabs);
-  },
-);
+const tabsQuery = vi.fn(async () => defaultTabs);
 
 const chromeMock = {
   runtime: {
@@ -107,16 +98,15 @@ function clearListeners(): void {
   listeners.onChanged.length = 0;
 }
 
-/** Fires a message through the listener and returns whether it signaled async (true). */
-function fireMessage(message: unknown): boolean {
-  const sendResponse = vi.fn();
-  const sender: chrome.runtime.MessageSender = {};
+/** Fires a message through the listener and returns the result. */
+function fireMessage(message: unknown): unknown {
+  const sender = {};
 
-  let isAsync = false;
+  let result: unknown;
   for (const listener of listeners.onMessage) {
-    isAsync = listener(message, sender, sendResponse);
+    result = listener(message, sender);
   }
-  return isAsync;
+  return result;
 }
 
 function simulateCommand(command: string): void {
@@ -185,22 +175,22 @@ describe('background/index', () => {
   });
 
   describe('message dispatch', () => {
-    it('returns false for non-ExtensionMessage values', () => {
+    it('returns undefined for non-ExtensionMessage values', () => {
       const result = fireMessage({ foo: 'bar' });
-      expect(result).toBe(false);
+      expect(result).toBeUndefined();
     });
 
-    it('returns false for messages with unknown type', () => {
+    it('returns undefined for messages with unknown type', () => {
       const result = fireMessage({ type: 'unknown/type' });
-      expect(result).toBe(false);
+      expect(result).toBeUndefined();
     });
 
-    it('returns true for valid extension messages (async channel)', () => {
+    it('returns a Promise for valid extension messages', () => {
       const result = fireMessage({
         type: 'extension/toggle',
         enabled: true,
       });
-      expect(result).toBe(true);
+      expect(result).toBeInstanceOf(Promise);
     });
 
     it('handles extension/toggle message', async () => {
@@ -266,7 +256,6 @@ describe('background/index', () => {
 
       expect(tabsQuery).toHaveBeenCalledWith(
         { url: 'https://github.com/*' },
-        expect.any(Function),
       );
       expect(tabsSendMessage).toHaveBeenCalledWith(1, {
         type: 'extension/toggle',
@@ -326,15 +315,7 @@ describe('background/index', () => {
     });
 
     it('pin-popover handles no active tab gracefully', async () => {
-      tabsQuery.mockImplementationOnce(
-        (_query: unknown, callback?: (tabs: { id?: number }[]) => void) => {
-          if (callback) {
-            callback([]);
-            return undefined;
-          }
-          return Promise.resolve([]);
-        },
-      );
+      tabsQuery.mockResolvedValueOnce([]);
       tabsSendMessage.mockClear();
 
       simulateCommand('pin-popover');
@@ -482,16 +463,7 @@ describe('background/index', () => {
     });
 
     it('skips tabs without an id', async () => {
-      tabsQuery.mockImplementation(
-        (_query: unknown, callback?: (tabs: { id?: number }[]) => void) => {
-          const tabs = [{ id: undefined }, { id: 3 }];
-          if (callback) {
-            callback(tabs);
-            return undefined;
-          }
-          return Promise.resolve(tabs);
-        },
-      );
+      tabsQuery.mockResolvedValue([{ id: undefined as unknown as number }, { id: 3 }]);
       tabsSendMessage.mockClear();
 
       fireMessage({

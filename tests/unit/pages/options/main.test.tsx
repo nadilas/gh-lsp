@@ -282,11 +282,11 @@ describe('Options', () => {
     ) as NodeListOf<HTMLInputElement>;
 
     // TS and JS checked, Go, Rust, Python unchecked
-    expect(checkboxes[0].checked).toBe(true); // TypeScript
-    expect(checkboxes[1].checked).toBe(true); // JavaScript
-    expect(checkboxes[2].checked).toBe(false); // Go
-    expect(checkboxes[3].checked).toBe(false); // Rust
-    expect(checkboxes[4].checked).toBe(false); // Python
+    expect(checkboxes[0]!.checked).toBe(true); // TypeScript
+    expect(checkboxes[1]!.checked).toBe(true); // JavaScript
+    expect(checkboxes[2]!.checked).toBe(false); // Go
+    expect(checkboxes[3]!.checked).toBe(false); // Rust
+    expect(checkboxes[4]!.checked).toBe(false); // Python
   });
 
   it('saves language toggle', async () => {
@@ -613,7 +613,7 @@ describe('Options', () => {
 
     // Get the storage change listener
     const storageListener = vi.mocked(chrome.storage.onChanged.addListener)
-      .mock.calls[0][0] as (
+      .mock.calls[0]![0] as (
         changes: Record<string, chrome.storage.StorageChange>,
         areaName: string,
       ) => void;

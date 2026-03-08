@@ -40,7 +40,7 @@ importers:
         specifier: ^25.3.5
         version: 25.3.5
       '@types/webextension-polyfill':
-        specifier: ^0.12.1
+        specifier: ^0.12.5
         version: 0.12.5
       '@vitest/coverage-v8':
         specifier: ^3.0.0

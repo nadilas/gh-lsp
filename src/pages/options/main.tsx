@@ -16,6 +16,7 @@ import {
   saveSecureSettings,
 } from '../../shared/settings';
 import { GITHUB_API_BASE_URL } from '../../shared/constants';
+import browser, { type Storage } from '../../shared/browser';
 
 // ─── Constants ───────────────────────────────────────────────────────────────
 
@@ -98,10 +99,10 @@ export const Options: FunctionComponent<OptionsProps> = ({ fetchFn }) => {
     };
   }, []);
 
-  // Listen for settings changes from other sources via chrome.storage.onChanged
+  // Listen for settings changes from other sources via browser.storage.onChanged
   useEffect(() => {
     const storageListener = (
-      changes: Record<string, chrome.storage.StorageChange>,
+      changes: Record<string, Storage.StorageChange>,
       areaName: string,
     ): void => {
       if (areaName !== 'sync') return;
@@ -112,9 +113,9 @@ export const Options: FunctionComponent<OptionsProps> = ({ fetchFn }) => {
       setSettings(settingsChange.newValue as ExtensionSettings);
     };
 
-    chrome.storage.onChanged.addListener(storageListener);
+    browser.storage.onChanged.addListener(storageListener);
     return () => {
-      chrome.storage.onChanged.removeListener(storageListener);
+      browser.storage.onChanged.removeListener(storageListener);
     };
   }, []);
 

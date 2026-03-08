@@ -24,6 +24,7 @@ import type {
 } from '@shared/types';
 import { getSettings } from '@shared/settings';
 import { LOADING_INDICATOR_DELAY_MS } from '@shared/constants';
+import browser from '@shared/browser';
 import { detectPage, observeNavigation, refineBlobContext } from './page-detector';
 import { observeCodeDom, findCodeContainers, findCodeLines } from './dom-observer';
 import { createTokenDetector, type TokenHoverEvent } from './token-detector';
@@ -586,9 +587,9 @@ export class GhLspContentScript {
         }
       };
 
-      chrome.runtime.onMessage.addListener(commandListener);
+      browser.runtime.onMessage.addListener(commandListener);
       this.stopCommandListener = () => {
-        chrome.runtime.onMessage.removeListener(commandListener);
+        browser.runtime.onMessage.removeListener(commandListener);
       };
     }
   }
@@ -822,7 +823,7 @@ export class GhLspContentScript {
     }
 
     // Convert LSP result to display data
-    const language = this.context?.language ?? 'typescript';
+    const language = (this.context?.language ?? 'typescript') as SupportedLanguage;
     const displayData = this.convertHoverToDisplayData(response.result, language);
 
     this.hoverData = displayData;
@@ -913,7 +914,7 @@ export class GhLspContentScript {
       newContext: context,
     };
 
-    chrome.runtime.sendMessage(message).catch(() => {
+    browser.runtime.sendMessage(message).catch(() => {
       // Extension context may be invalidated
     });
   }

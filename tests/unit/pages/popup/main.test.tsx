@@ -472,7 +472,7 @@ describe('Popup', () => {
 
     // Get the storage change listener
     const storageListener = vi.mocked(chrome.storage.onChanged.addListener)
-      .mock.calls[0][0] as (
+      .mock.calls[0]![0] as (
         changes: Record<string, chrome.storage.StorageChange>,
         areaName: string,
       ) => void;
@@ -499,7 +499,7 @@ describe('Popup', () => {
     container = await renderPopup({}, { enabled: true });
 
     const storageListener = vi.mocked(chrome.storage.onChanged.addListener)
-      .mock.calls[0][0] as (
+      .mock.calls[0]![0] as (
         changes: Record<string, chrome.storage.StorageChange>,
         areaName: string,
       ) => void;

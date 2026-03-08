@@ -11,6 +11,7 @@ import type {
 import { getSettings, saveSettings } from '../../shared/settings';
 import { isExtensionMessage } from '../../shared/messages';
 import { detectPage } from '../../content/page-detector';
+import browser, { type Storage } from '../../shared/browser';
 
 // ─── Status Indicators ──────────────────────────────────────────────────────
 
@@ -80,7 +81,7 @@ export const Popup: FunctionComponent<PopupProps> = ({
         // Query active tab to detect page
         const getActiveTab =
           queryActiveTab ??
-          (() => chrome.tabs.query({ active: true, currentWindow: true }));
+          (() => browser.tabs.query({ active: true, currentWindow: true }));
         const tabs = await getActiveTab();
         if (cancelled) return;
 
@@ -121,16 +122,16 @@ export const Popup: FunctionComponent<PopupProps> = ({
       }
     };
 
-    chrome.runtime.onMessage.addListener(listener);
+    browser.runtime.onMessage.addListener(listener);
     return () => {
-      chrome.runtime.onMessage.removeListener(listener);
+      browser.runtime.onMessage.removeListener(listener);
     };
   }, []);
 
-  // Listen for settings changes via chrome.storage.onChanged
+  // Listen for settings changes via browser.storage.onChanged
   useEffect(() => {
     const storageListener = (
-      changes: Record<string, chrome.storage.StorageChange>,
+      changes: Record<string, Storage.StorageChange>,
       areaName: string,
     ): void => {
       if (areaName !== 'sync') return;
@@ -147,9 +148,9 @@ export const Popup: FunctionComponent<PopupProps> = ({
       }));
     };
 
-    chrome.storage.onChanged.addListener(storageListener);
+    browser.storage.onChanged.addListener(storageListener);
     return () => {
-      chrome.storage.onChanged.removeListener(storageListener);
+      browser.storage.onChanged.removeListener(storageListener);
     };
   }, []);
 
@@ -173,7 +174,7 @@ export const Popup: FunctionComponent<PopupProps> = ({
   }, [settings]);
 
   const handleOpenOptions = useCallback(() => {
-    const openFn = openOptionsPage ?? (() => chrome.runtime.openOptionsPage());
+    const openFn = openOptionsPage ?? (() => browser.runtime.openOptionsPage());
     openFn();
   }, [openOptionsPage]);
 
