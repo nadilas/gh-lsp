@@ -100,7 +100,7 @@ Content Script (GitHub DOM) <-> Background Service Worker <-> Web Workers (WASM 
 
 ### Phase 12: CI/CD & Release
 
-- [ ] Create `.github/workflows/ci.yml`: install, lint, typecheck, test, build
+- [x] Create `.github/workflows/ci.yml`: install, lint, typecheck, test, build
 - [ ] Create `.github/workflows/release.yml`: build Chrome .zip + Safari project on tag push
 - [ ] Final manual testing and Chrome Web Store submission preparation
 
