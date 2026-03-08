@@ -70,6 +70,7 @@ describe('DEFAULT_SETTINGS', () => {
       keyboardShortcutSidebar: 'Alt+Shift+S',
       keyboardShortcutPinPopover: 'Alt+Shift+P',
       enabled: true,
+      sidebarSize: 300,
     });
   });
 

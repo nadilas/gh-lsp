@@ -14,6 +14,7 @@ export const DEFAULT_SETTINGS: ExtensionSettings = {
   keyboardShortcutSidebar: 'Alt+Shift+S',
   keyboardShortcutPinPopover: 'Alt+Shift+P',
   enabled: true,
+  sidebarSize: 300,
 };
 
 const SETTINGS_STORAGE_KEY = 'gh-lsp-settings';

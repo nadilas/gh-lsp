@@ -13,6 +13,7 @@ import { ParameterList } from '../components/ParameterList';
 import { DefinitionLink } from '../components/DefinitionLink';
 import { LoadingState } from '../components/LoadingState';
 import { ErrorState } from '../components/ErrorState';
+import { createResizeHandler, isHorizontalPosition } from './resize';
 
 // ─── Props ───────────────────────────────────────────────────────────────────
 
@@ -41,10 +42,6 @@ export interface SidebarProps {
 
 // ─── Position Helpers ────────────────────────────────────────────────────────
 
-function isHorizontal(position: SidebarPosition): boolean {
-  return position === 'left' || position === 'right';
-}
-
 function getPositionStyles(
   position: SidebarPosition,
   state: SidebarState,
@@ -61,7 +58,7 @@ function getPositionStyles(
     boxSizing: 'border-box',
   };
 
-  if (isHorizontal(position)) {
+  if (isHorizontalPosition(position)) {
     base.top = '0';
     base.height = '100vh';
     base.width = effectiveSize;
@@ -127,52 +124,18 @@ export const Sidebar: FunctionComponent<SidebarProps> = ({
     return () => document.removeEventListener('keydown', handleKeyDown);
   }, [state, onToggle]);
 
-  // Resize handling via drag
+  // Resize handling via drag — delegated to the extracted resize module
   const handleResizeStart = useCallback(
     (e: MouseEvent) => {
-      e.preventDefault();
-      const startPos = isHorizontal(position) ? e.clientX : e.clientY;
-      const startSize = effectiveSize;
-
-      const handleMouseMove = (moveEvent: MouseEvent): void => {
-        const currentPos = isHorizontal(position)
-          ? moveEvent.clientX
-          : moveEvent.clientY;
-
-        let delta: number;
-        if (position === 'right' || position === 'bottom') {
-          delta = startPos - currentPos;
-        } else {
-          delta = currentPos - startPos;
-        }
-
-        const maxSize = isHorizontal(position)
-          ? window.innerWidth * 0.5
-          : window.innerHeight * 0.5;
-
-        const newSize = Math.max(
-          SIDEBAR_MIN_SIZE_PX,
-          Math.min(maxSize, startSize + delta),
-        );
-
-        setInternalSize(newSize);
-        onSizeChange?.(newSize);
-      };
-
-      const handleMouseUp = (): void => {
-        document.removeEventListener('mousemove', handleMouseMove);
-        document.removeEventListener('mouseup', handleMouseUp);
-        document.body.style.removeProperty('cursor');
-        document.body.style.removeProperty('user-select');
-      };
-
-      document.body.style.cursor = isHorizontal(position)
-        ? 'col-resize'
-        : 'row-resize';
-      document.body.style.userSelect = 'none';
-
-      document.addEventListener('mousemove', handleMouseMove);
-      document.addEventListener('mouseup', handleMouseUp);
+      const handler = createResizeHandler({
+        position,
+        currentSize: effectiveSize,
+        onResize: (size) => {
+          setInternalSize(size);
+          onSizeChange?.(size);
+        },
+      });
+      handler(e);
     },
     [position, effectiveSize, onSizeChange],
   );
@@ -223,7 +186,7 @@ export const Sidebar: FunctionComponent<SidebarProps> = ({
       zIndex: '1',
     };
 
-    if (isHorizontal(position)) {
+    if (isHorizontalPosition(position)) {
       base.top = '0';
       base.height = '100%';
       base.width = '4px';

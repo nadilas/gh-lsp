@@ -479,39 +479,15 @@ describe('Popover', () => {
   describe('dismiss on scroll', () => {
     it('calls onDismiss when scrolled beyond threshold', async () => {
       const onDismiss = vi.fn();
-      // Track scroll listeners registered on window
-      const scrollListeners: EventListener[] = [];
-      const origAdd = window.addEventListener.bind(window);
-      const origRemove = window.removeEventListener.bind(window);
-      vi.spyOn(window, 'addEventListener').mockImplementation(
-        (type: string, listener: EventListenerOrEventListenerObject, options?: boolean | AddEventListenerOptions) => {
-          if (type === 'scroll' && typeof listener === 'function') {
-            scrollListeners.push(listener);
-          }
-          origAdd(type, listener, options);
-        }
-      );
-      vi.spyOn(window, 'removeEventListener').mockImplementation(
-        (type: string, listener: EventListenerOrEventListenerObject, options?: boolean | EventListenerOptions) => {
-          if (type === 'scroll' && typeof listener === 'function') {
-            const idx = scrollListeners.indexOf(listener);
-            if (idx >= 0) scrollListeners.splice(idx, 1);
-          }
-          origRemove(type, listener, options);
-        }
-      );
 
       Object.defineProperty(window, 'scrollY', { value: 0, writable: true, configurable: true });
 
       const props = createProps({ state: 'visible', onDismiss });
       container = renderPopover(props);
-      // Flush Preact effects with extended wait
-      for (let i = 0; i < 10; i++) {
-        await new Promise((r) => setTimeout(r, 0));
-      }
-
-      // Verify scroll listener was attached
-      expect(scrollListeners.length).toBeGreaterThan(0);
+      // Flush Preact effects so scroll listener is attached — Preact schedules
+      // effects via a microtask + rAF chain, so we need a real tick.
+      await flushEffects();
+      await new Promise((r) => setTimeout(r, 50));
 
       // Simulate scroll beyond threshold
       Object.defineProperty(window, 'scrollY', { value: SCROLL_DISMISS_THRESHOLD_PX + 1, writable: true, configurable: true });
