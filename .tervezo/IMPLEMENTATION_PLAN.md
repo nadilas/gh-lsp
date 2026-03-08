@@ -48,7 +48,7 @@ Content Script (GitHub DOM) <-> Background Service Worker <-> Web Workers (WASM 
 - [x] Research and source/compile TypeScript language server to WASM (or integrate existing WASM build)
 - [x] Create WASM loader for TypeScript server — initialize, configure capabilities, test hover/definition
 - [x] Research Go, Rust, Python language servers compiled to WASM
-- [ ] Create integration tests for WASM server lifecycle and hover responses
+- [x] Create integration tests for WASM server lifecycle and hover responses
 
 ### Phase 5: Content Script
 
