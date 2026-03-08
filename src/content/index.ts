@@ -338,7 +338,7 @@ export class GhLspContentScript {
     // Process existing code containers
     const containers = findCodeContainers();
     for (const container of containers) {
-      const _lines = findCodeLines(container);
+      findCodeLines(container);
       // Lines are handled by the token detector's event delegation
     }
   }

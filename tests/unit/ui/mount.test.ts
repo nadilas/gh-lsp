@@ -80,7 +80,7 @@ describe('ExtensionMount', () => {
 
       const styleElements = shadowRoot.querySelectorAll('style');
       expect(styleElements.length).toBe(1);
-      expect(styleElements[0].textContent).toBe('.test { color: red; }');
+      expect(styleElements[0]!.textContent).toBe('.test { color: red; }');
     });
 
     it('places the style element before the container', () => {

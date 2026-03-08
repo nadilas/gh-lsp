@@ -579,8 +579,8 @@ describe('GhLspContentScript', () => {
       vi.advanceTimersByTime(100);
 
       // Resolve the hover response
-      if (resolveHover) {
-        resolveHover({
+      if (resolveHover !== null) {
+        (resolveHover as (value: unknown) => void)({
           type: 'lsp/response',
           requestId: 'test',
           kind: 'hover',
