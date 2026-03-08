@@ -45,7 +45,7 @@ Content Script (GitHub DOM) <-> Background Service Worker <-> Web Workers (WASM 
 
 ### Phase 4: WASM Language Server Integration
 
-- [ ] Research and source/compile TypeScript language server to WASM (or integrate existing WASM build)
+- [x] Research and source/compile TypeScript language server to WASM (or integrate existing WASM build)
 - [ ] Create WASM loader for TypeScript server — initialize, configure capabilities, test hover/definition
 - [ ] Research Go, Rust, Python language servers compiled to WASM
 - [ ] Create integration tests for WASM server lifecycle and hover responses
@@ -109,3 +109,4 @@ Content Script (GitHub DOM) <-> Background Service Worker <-> Web Workers (WASM 
 - `jsdom` was missing as a devDependency despite being configured as the vitest test environment. Added in Phase 0 completion.
 - `pnpm lint` fails when `tests/` directory doesn't exist. Will be resolved when first test files are created.
 - `src/shared/types.ts` contains ~60 named types/interfaces covering: LSP protocol (Position, Range, Location, Hover, SignatureHelp, capabilities, lifecycle), JSON-RPC 2.0 transport, extension messages (discriminated union of 13 message types), worker messages, error codes, settings schema, UI state, popup state, GitHub API types, and cache types.
+- **Phase 4-T1 Research**: TypeScript's Language Service API is JavaScript-based — no WASM compilation needed. It runs directly in a Web Worker via `ts.createLanguageService()` with a custom `LanguageServiceHost` backed by the VFS. The server adapter translates LSP methods to TS API calls: `getQuickInfoAtPosition` (hover), `getDefinitionAtPosition` (definition), `getSignatureHelpItems` (signature help). A minimal lib.d.ts (~300 lines) is embedded to provide essential built-in types (Array, Promise, Map, Set, etc.) without bundling the full 20K-line lib.es5.d.ts. Position conversion between LSP (line/character) and TypeScript (offset) is handled by `positionToOffset`/`offsetToPosition`. The same server adapter handles both TypeScript and JavaScript (via `allowJs`/`checkJs`).
