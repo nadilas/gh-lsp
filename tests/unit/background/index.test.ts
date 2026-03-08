@@ -27,9 +27,14 @@ const listeners: {
 };
 
 const tabsSendMessage = vi.fn(async () => undefined);
+const defaultTabs = [{ id: 1 }, { id: 2 }];
 const tabsQuery = vi.fn(
-  (_query: unknown, callback: (tabs: { id?: number }[]) => void) => {
-    callback([{ id: 1 }, { id: 2 }]);
+  (_query: unknown, callback?: (tabs: { id?: number }[]) => void) => {
+    if (callback) {
+      callback(defaultTabs);
+      return undefined;
+    }
+    return Promise.resolve(defaultTabs);
   },
 );
 
@@ -304,8 +309,42 @@ describe('background/index', () => {
       expect(stored.displayMode).toBe('popover');
     });
 
-    it('pin-popover does not throw', () => {
-      expect(() => simulateCommand('pin-popover')).not.toThrow();
+    it('pin-popover forwards command to the active tab', async () => {
+      tabsSendMessage.mockClear();
+
+      simulateCommand('pin-popover');
+
+      await flush();
+
+      expect(tabsQuery).toHaveBeenCalledWith({
+        active: true,
+        currentWindow: true,
+      });
+      expect(tabsSendMessage).toHaveBeenCalledWith(1, {
+        command: 'pin-popover',
+      });
+    });
+
+    it('pin-popover handles no active tab gracefully', async () => {
+      tabsQuery.mockImplementationOnce(
+        (_query: unknown, callback?: (tabs: { id?: number }[]) => void) => {
+          if (callback) {
+            callback([]);
+            return undefined;
+          }
+          return Promise.resolve([]);
+        },
+      );
+      tabsSendMessage.mockClear();
+
+      simulateCommand('pin-popover');
+
+      await flush();
+
+      expect(tabsSendMessage).not.toHaveBeenCalledWith(
+        expect.anything(),
+        { command: 'pin-popover' },
+      );
     });
 
     it('unknown command does not throw', () => {
@@ -444,8 +483,13 @@ describe('background/index', () => {
 
     it('skips tabs without an id', async () => {
       tabsQuery.mockImplementation(
-        (_query: unknown, callback: (tabs: { id?: number }[]) => void) => {
-          callback([{ id: undefined }, { id: 3 }]);
+        (_query: unknown, callback?: (tabs: { id?: number }[]) => void) => {
+          const tabs = [{ id: undefined }, { id: 3 }];
+          if (callback) {
+            callback(tabs);
+            return undefined;
+          }
+          return Promise.resolve(tabs);
         },
       );
       tabsSendMessage.mockClear();

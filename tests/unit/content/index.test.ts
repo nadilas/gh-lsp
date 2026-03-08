@@ -684,6 +684,108 @@ describe('GhLspContentScript', () => {
     });
   });
 
+  // ── Command Listener ───────────────────────────────────────────────
+
+  describe('command listener', () => {
+    it('registers a command listener on chrome.runtime.onMessage', async () => {
+      setLocationTo('https://github.com/owner/repo/blob/main/src/index.ts');
+      script = new GhLspContentScript();
+      await script.initialize();
+
+      // The content messaging listener + the command listener = 2 listeners
+      expect(chrome.runtime.onMessage.addListener).toHaveBeenCalled();
+    });
+
+    it('pin-popover command toggles popover pin state', async () => {
+      setLocationTo('https://github.com/owner/repo/blob/main/src/index.ts');
+      script = new GhLspContentScript();
+
+      const hoverResponse: LspHoverResponse = {
+        type: 'lsp/response',
+        requestId: 'test-id',
+        kind: 'hover',
+        result: {
+          contents: { kind: 'plaintext', value: 'const x: number' },
+        },
+      };
+      sendMessageMock.mockResolvedValue(hoverResponse);
+
+      await script.initialize();
+
+      // Trigger a hover to get a visible popover
+      const container = createCodeContainer();
+      const line = createCodeLine(5);
+      container.appendChild(line);
+
+      const codeContent = line.querySelector('.react-file-line')!;
+      const moveEvent = new MouseEvent('mousemove', {
+        clientX: 100,
+        clientY: 50,
+        bubbles: true,
+      });
+      Object.defineProperty(moveEvent, 'target', { value: codeContent });
+      document.dispatchEvent(moveEvent);
+
+      vi.advanceTimersByTime(350);
+      await vi.advanceTimersByTimeAsync(0);
+
+      expect(script.getPopoverState()).toBe('visible');
+
+      // Send pin-popover command via message listener
+      for (const listener of messageListeners) {
+        listener(
+          { command: 'pin-popover' },
+          {} as chrome.runtime.MessageSender,
+          vi.fn(),
+        );
+      }
+
+      expect(script.getPopoverState()).toBe('pinned');
+
+      // Send again to unpin
+      for (const listener of messageListeners) {
+        listener(
+          { command: 'pin-popover' },
+          {} as chrome.runtime.MessageSender,
+          vi.fn(),
+        );
+      }
+
+      expect(script.getPopoverState()).toBe('visible');
+    });
+
+    it('ignores unknown commands', async () => {
+      setLocationTo('https://github.com/owner/repo/blob/main/src/index.ts');
+      script = new GhLspContentScript();
+      await script.initialize();
+
+      // Should not throw
+      for (const listener of messageListeners) {
+        listener(
+          { command: 'unknown-command' },
+          {} as chrome.runtime.MessageSender,
+          vi.fn(),
+        );
+      }
+
+      expect(script.getState()).toBe('active');
+    });
+
+    it('cleans up command listener on dispose', async () => {
+      setLocationTo('https://github.com/owner/repo/blob/main/src/index.ts');
+      script = new GhLspContentScript();
+      await script.initialize();
+
+      const removeListenerMock = vi.mocked(chrome.runtime.onMessage.removeListener);
+      const callsBefore = removeListenerMock.mock.calls.length;
+
+      script.dispose();
+
+      // Should have called removeListener for the command listener
+      expect(removeListenerMock.mock.calls.length).toBeGreaterThan(callsBefore);
+    });
+  });
+
   // ── Edge Cases ─────────────────────────────────────────────────────────
 
   describe('edge cases', () => {

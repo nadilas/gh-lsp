@@ -183,8 +183,7 @@ async function handleCommand(command: string): Promise<void> {
     }
 
     case 'pin-popover':
-      // Forwarded to the active tab's content script in Phase 8
-      // when keyboard shortcut handlers are wired to the UI layer.
+      await forwardCommandToActiveTab('pin-popover');
       break;
   }
 }
@@ -243,6 +242,16 @@ function computeSettingsDiff(
 }
 
 // ─── Tab messaging helpers ───────────────────────────────────────────────────
+
+async function forwardCommandToActiveTab(command: string): Promise<void> {
+  const tabs = await chrome.tabs.query({ active: true, currentWindow: true });
+  const tab = tabs[0];
+  if (tab?.id != null) {
+    chrome.tabs.sendMessage(tab.id, { command }).catch(() => {
+      // Tab may not have content script loaded
+    });
+  }
+}
 
 function broadcastToGitHubTabs(message: ExtensionMessage): void {
   chrome.tabs.query({ url: 'https://github.com/*' }, (tabs) => {

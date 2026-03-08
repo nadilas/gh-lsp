@@ -79,7 +79,7 @@ Content Script (GitHub DOM) <-> Background Service Worker <-> Web Workers (WASM 
 - [ ] Implement Popup page (`src/pages/popup/`): status display, quick toggles, language indicator, link to options
 - [ ] Implement Options page (`src/pages/options/`): display mode, sidebar position, language toggles, PAT configuration, performance settings
 - [ ] Wire settings changes to `chrome.storage.sync` with auto-save and live propagation via `chrome.storage.onChanged`
-- [ ] Implement keyboard shortcut handlers (toggle extension, toggle sidebar, pin popover)
+- [x] Implement keyboard shortcut handlers (toggle extension, toggle sidebar, pin popover)
 
 ### Phase 9: Cross-Browser Support
 

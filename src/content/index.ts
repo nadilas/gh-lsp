@@ -62,6 +62,7 @@ export class GhLspContentScript {
   private stopDomObserver: (() => void) | null = null;
   private stopTokenDetector: (() => void) | null = null;
   private stopListeningForNotifications: (() => void) | null = null;
+  private stopCommandListener: (() => void) | null = null;
 
   // Loading indicator timer — shows skeleton after a delay
   private loadingTimer: ReturnType<typeof setTimeout> | null = null;
@@ -220,6 +221,12 @@ export class GhLspContentScript {
     if (this.stopListeningForNotifications) {
       this.stopListeningForNotifications();
       this.stopListeningForNotifications = null;
+    }
+
+    // Stop command listener
+    if (this.stopCommandListener) {
+      this.stopCommandListener();
+      this.stopCommandListener = null;
     }
 
     this.messaging.dispose();
@@ -562,6 +569,27 @@ export class GhLspContentScript {
           // Future: update status indicator in UI
         },
       });
+    }
+
+    // Keyboard command listener (pin-popover forwarded from background)
+    if (!this.stopCommandListener) {
+      const commandListener = (message: unknown): void => {
+        if (
+          message !== null &&
+          typeof message === 'object' &&
+          'command' in message
+        ) {
+          const cmd = (message as { command: string }).command;
+          if (cmd === 'pin-popover') {
+            this.pinPopover();
+          }
+        }
+      };
+
+      chrome.runtime.onMessage.addListener(commandListener);
+      this.stopCommandListener = () => {
+        chrome.runtime.onMessage.removeListener(commandListener);
+      };
     }
   }
 
