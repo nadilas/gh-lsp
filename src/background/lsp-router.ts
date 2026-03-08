@@ -15,6 +15,7 @@ import type {
 } from '../shared/types';
 import { getLanguageForFilePath } from '../shared/languages';
 import { getCapabilities } from '../workers/language-registry';
+import { isServerAvailable, getUnavailableReason } from '../workers/server-availability';
 import { createErrorResponse } from '../shared/messages';
 import type { WorkerPool } from './worker-pool';
 import type { DocumentSync } from './document-sync';
@@ -347,6 +348,16 @@ export class LspRouter {
         error: createErrorResponse(requestId, {
           code: 'unsupported_language',
           message: `Language ${language} is disabled`,
+          language,
+        }),
+      };
+    }
+
+    if (!isServerAvailable(language)) {
+      return {
+        error: createErrorResponse(requestId, {
+          code: 'unsupported_language',
+          message: getUnavailableReason(language),
           language,
         }),
       };

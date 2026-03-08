@@ -237,6 +237,42 @@ describe('LspRouter', () => {
     });
   });
 
+  describe('unavailable server', () => {
+    it('returns error for Go files (no WASM server available)', async () => {
+      const request = createHoverRequest({ filePath: 'main.go' });
+      const result = await router.handleRequest(request);
+
+      expect(result.type).toBe('lsp/error');
+      expect((result as LspErrorResponse).error.code).toBe('unsupported_language');
+      expect((result as LspErrorResponse).error.message).toContain('gopls');
+    });
+
+    it('returns error for Rust files (no WASM server available)', async () => {
+      const request = createHoverRequest({ filePath: 'main.rs' });
+      const result = await router.handleRequest(request);
+
+      expect(result.type).toBe('lsp/error');
+      expect((result as LspErrorResponse).error.code).toBe('unsupported_language');
+      expect((result as LspErrorResponse).error.message).toContain('rust-analyzer');
+    });
+
+    it('returns error for Python files (no WASM server available)', async () => {
+      const request = createHoverRequest({ filePath: 'main.py' });
+      const result = await router.handleRequest(request);
+
+      expect(result.type).toBe('lsp/error');
+      expect((result as LspErrorResponse).error.code).toBe('unsupported_language');
+      expect((result as LspErrorResponse).error.message).toContain('Pyright');
+    });
+
+    it('does not attempt to create worker for unavailable server', async () => {
+      const request = createHoverRequest({ filePath: 'main.go' });
+      await router.handleRequest(request);
+
+      expect(workerPool.getOrCreateWorker).not.toHaveBeenCalled();
+    });
+  });
+
   describe('cancel', () => {
     it('handles cancel request without error', async () => {
       const request: LspCancelRequest = {

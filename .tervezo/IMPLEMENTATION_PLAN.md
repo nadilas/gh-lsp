@@ -47,7 +47,7 @@ Content Script (GitHub DOM) <-> Background Service Worker <-> Web Workers (WASM 
 
 - [x] Research and source/compile TypeScript language server to WASM (or integrate existing WASM build)
 - [x] Create WASM loader for TypeScript server — initialize, configure capabilities, test hover/definition
-- [ ] Research Go, Rust, Python language servers compiled to WASM
+- [x] Research Go, Rust, Python language servers compiled to WASM
 - [ ] Create integration tests for WASM server lifecycle and hover responses
 
 ### Phase 5: Content Script
@@ -110,3 +110,4 @@ Content Script (GitHub DOM) <-> Background Service Worker <-> Web Workers (WASM 
 - `pnpm lint` fails when `tests/` directory doesn't exist. Will be resolved when first test files are created.
 - `src/shared/types.ts` contains ~60 named types/interfaces covering: LSP protocol (Position, Range, Location, Hover, SignatureHelp, capabilities, lifecycle), JSON-RPC 2.0 transport, extension messages (discriminated union of 13 message types), worker messages, error codes, settings schema, UI state, popup state, GitHub API types, and cache types.
 - **Phase 4-T1 Research**: TypeScript's Language Service API is JavaScript-based — no WASM compilation needed. It runs directly in a Web Worker via `ts.createLanguageService()` with a custom `LanguageServiceHost` backed by the VFS. The server adapter translates LSP methods to TS API calls: `getQuickInfoAtPosition` (hover), `getDefinitionAtPosition` (definition), `getSignatureHelpItems` (signature help). A minimal lib.d.ts (~300 lines) is embedded to provide essential built-in types (Array, Promise, Map, Set, etc.) without bundling the full 20K-line lib.es5.d.ts. Position conversion between LSP (line/character) and TypeScript (offset) is handled by `positionToOffset`/`offsetToPosition`. The same server adapter handles both TypeScript and JavaScript (via `allowJs`/`checkJs`).
+- **Phase 4-T3 Research**: Go (gopls) has no WASM build — it's a native Go binary with heavy system dependencies. Rust (rust-analyzer) has an experimental WASM build at `github.com/rust-analyzer/rust-analyzer-wasm` (~10MB+). Python has two viable paths: Pyright is TypeScript-based and can run in a Web Worker (see `monaco-pyright-lsp`); Jedi/Pylsp require a Python runtime (possible via Pyodide but heavy). Currently only TypeScript/JavaScript servers are available. Added `server-availability.ts` with `isServerAvailable()`, `getWorkerUrl()`, and `getUnavailableReason()`. The LspRouter now checks availability before spawning workers, returning descriptive error messages for unavailable languages.
