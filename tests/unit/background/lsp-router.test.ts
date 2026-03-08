@@ -301,4 +301,86 @@ describe('LspRouter', () => {
       expect((result as LspErrorResponse).error.message).toContain('Worker crashed');
     });
   });
+
+  describe('definition null result', () => {
+    it('returns empty array when transport returns null', async () => {
+      const request: LspDefinitionRequest = {
+        type: 'lsp/definition',
+        requestId: 'req-def-null',
+        owner: 'owner',
+        repo: 'repo',
+        ref: 'main',
+        filePath: 'src/index.ts',
+        position: { line: 5, character: 10 },
+      };
+
+      const managed = await workerPool.getOrCreateWorker('typescript');
+      vi.spyOn(managed.transport, 'sendRequest').mockResolvedValue(null);
+
+      const result = await router.handleRequest(request);
+
+      expect(result.type).toBe('lsp/response');
+      expect((result as LspDefinitionResponse).kind).toBe('definition');
+      expect((result as LspDefinitionResponse).result).toEqual([]);
+    });
+
+    it('does not cache null definition result', async () => {
+      const request: LspDefinitionRequest = {
+        type: 'lsp/definition',
+        requestId: 'req-def-null2',
+        owner: 'owner',
+        repo: 'repo',
+        ref: 'main',
+        filePath: 'src/index.ts',
+        position: { line: 5, character: 10 },
+      };
+
+      const managed = await workerPool.getOrCreateWorker('typescript');
+      vi.spyOn(managed.transport, 'sendRequest').mockResolvedValue(null);
+
+      await router.handleRequest(request);
+
+      // Should NOT be cached
+      const cacheKey = 'owner/repo/main/src/index.ts:5:10:lsp/definition';
+      expect(cache.get(cacheKey)).toBeNull();
+    });
+  });
+
+  describe('document sync failure', () => {
+    it('returns lsp_server_error when document sync fails', async () => {
+      vi.mocked(docSync.ensureDocumentOpen).mockRejectedValueOnce(
+        new Error('API fetch failed: 404'),
+      );
+
+      const request = createHoverRequest();
+      const result = await router.handleRequest(request);
+
+      expect(result.type).toBe('lsp/error');
+      expect((result as LspErrorResponse).error.code).toBe('lsp_server_error');
+      expect((result as LspErrorResponse).error.message).toContain('API fetch failed');
+    });
+  });
+
+  describe('signatureHelp null result', () => {
+    it('returns null result as-is (not coerced to empty array)', async () => {
+      const request: LspSignatureHelpRequest = {
+        type: 'lsp/signatureHelp',
+        requestId: 'req-sig-null',
+        owner: 'owner',
+        repo: 'repo',
+        ref: 'main',
+        filePath: 'src/index.ts',
+        position: { line: 5, character: 10 },
+      };
+
+      const managed = await workerPool.getOrCreateWorker('typescript');
+      vi.spyOn(managed.transport, 'sendRequest').mockResolvedValue(null);
+
+      const result = await router.handleRequest(request);
+
+      expect(result.type).toBe('lsp/response');
+      // signatureHelp returns null directly, not []
+      expect((result as { result: unknown }).result).toBeNull();
+    });
+  });
 });

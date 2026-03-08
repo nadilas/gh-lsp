@@ -169,6 +169,16 @@ describe('JsonRpcTransport', () => {
       transport.handleMessage('string');
       transport.handleMessage(42);
     });
+
+    it('clears pending entry but never settles promise when response has id but no result or error', () => {
+      ignoreRejection(transport.sendRequest('method1'));
+
+      // Send a malformed response: has id but neither result nor error
+      transport.handleMessage({ jsonrpc: '2.0', id: 1 });
+
+      // The pending entry should be cleared (timer cleared, entry deleted)
+      expect(transport.pendingCount).toBe(0);
+    });
   });
 
   describe('cancelRequest', () => {

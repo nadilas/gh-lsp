@@ -216,6 +216,87 @@ describe('WorkerPool', () => {
     });
   });
 
+  describe('spawn failure recovery', () => {
+    it('cleans up and re-throws when LSP initialize fails', async () => {
+      // Override the factory to create a worker that rejects initialize
+      const failFactory = createMockWorkerFactory();
+      const failPool = new WorkerPool(2, 60_000, failFactory.factory);
+
+      // Override postMessage to NOT auto-respond (simulate a timeout or error)
+      failFactory.factory = () => {
+        const w = new MockWorker();
+        failFactory.workers.push(w);
+        w.postMessage.mockImplementation((msg: unknown) => {
+          const m = msg as Record<string, unknown>;
+          if ('id' in m && m['method'] === 'initialize') {
+            queueMicrotask(() => {
+              w.simulateResponse({
+                jsonrpc: '2.0',
+                id: m['id'],
+                error: { code: -32603, message: 'Init failed' },
+              });
+            });
+          }
+        });
+        return w as unknown as Worker;
+      };
+      const pool2 = new WorkerPool(2, 60_000, failFactory.factory);
+
+      await expect(pool2.getOrCreateWorker('typescript')).rejects.toBeDefined();
+      expect(pool2.activeCount).toBe(0);
+      expect(pool2.getWorker('typescript')).toBeUndefined();
+    });
+  });
+
+  describe('idle timer with pending requests', () => {
+    it('does not terminate worker with pending requests', async () => {
+      const managed = await pool.getOrCreateWorker('typescript');
+      managed.pendingRequests.add('req-1');
+
+      pool.startIdleTimer('typescript');
+
+      await vi.advanceTimersByTimeAsync(60_001);
+
+      // Worker should still exist because it has pending requests
+      expect(pool.getWorker('typescript')).toBeDefined();
+    });
+  });
+
+  describe('shutdown failure during terminate', () => {
+    it('still terminates worker even when shutdown request fails', async () => {
+      // Create a worker factory that rejects shutdown
+      const factory2 = createMockWorkerFactory();
+      // Override to reject shutdown
+      const origFactory = factory2.factory;
+      factory2.factory = (...args: Parameters<typeof origFactory>) => {
+        const w = origFactory(...args) as unknown as MockWorker;
+        const origPostMessage = w.postMessage;
+        w.postMessage = vi.fn((msg: unknown) => {
+          const m = msg as Record<string, unknown>;
+          if ('id' in m && m['method'] === 'shutdown') {
+            queueMicrotask(() => {
+              w.simulateResponse({
+                jsonrpc: '2.0',
+                id: m['id'],
+                error: { code: -32603, message: 'Shutdown failed' },
+              });
+            });
+          } else {
+            origPostMessage(msg);
+          }
+        });
+        return w as unknown as Worker;
+      };
+      const pool2 = new WorkerPool(2, 60_000, factory2.factory);
+      await pool2.getOrCreateWorker('typescript');
+
+      // Should not throw
+      await pool2.terminateWorker('typescript');
+      expect(pool2.getWorker('typescript')).toBeUndefined();
+      expect(pool2.activeCount).toBe(0);
+    });
+  });
+
   describe('activeCount', () => {
     it('returns 0 for empty pool', () => {
       expect(pool.activeCount).toBe(0);

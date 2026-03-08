@@ -333,6 +333,94 @@ describe('GitHubApiClient', () => {
       expect(client.getRateLimitInfo()).toBeNull();
     });
   });
+
+  describe('non-base64 content', () => {
+    it('returns raw content when encoding is not base64', async () => {
+      mockFetch.mockResolvedValueOnce(
+        createMockResponse(
+          {
+            name: 'test.ts',
+            path: 'src/test.ts',
+            sha: 'abc123',
+            size: 10,
+            encoding: 'utf-8',
+            content: 'raw content here',
+            download_url: null,
+          },
+          200,
+          {
+            'X-RateLimit-Limit': '60',
+            'X-RateLimit-Remaining': '55',
+            'X-RateLimit-Reset': String(Math.floor(Date.now() / 1000) + 3600),
+          },
+        ),
+      );
+
+      const content = await client.fetchFileContent('owner', 'repo', 'main', 'file.ts');
+      expect(content).toBe('raw content here');
+    });
+  });
+
+  describe('non-rate-limit 403', () => {
+    it('throws fetch_unauthorized for 403 without zero remaining', async () => {
+      mockFetch.mockResolvedValueOnce(
+        createMockResponse({ message: 'Forbidden' }, 403, {
+          'X-RateLimit-Remaining': '50',
+          'X-RateLimit-Limit': '60',
+          'X-RateLimit-Reset': String(Math.floor(Date.now() / 1000) + 3600),
+        }),
+      );
+
+      await expect(
+        client.fetchFileContent('owner', 'repo', 'main', 'private.ts'),
+      ).rejects.toMatchObject({
+        code: 'fetch_unauthorized',
+      } satisfies Partial<ExtensionError>);
+    });
+  });
+
+  describe('server errors', () => {
+    it('throws fetch_error after retries for 500 responses', async () => {
+      mockFetch.mockResolvedValue(
+        createMockResponse({ message: 'Internal Server Error' }, 500),
+      );
+
+      let caughtError: unknown;
+      const promise = client
+        .fetchFileContent('owner', 'repo', 'main', 'file.ts')
+        .catch((e) => { caughtError = e; });
+
+      for (let i = 0; i < 10; i++) {
+        await vi.advanceTimersByTimeAsync(120_000);
+      }
+      await promise;
+
+      expect(caughtError).toMatchObject({
+        code: 'fetch_error',
+        message: expect.stringContaining('500'),
+      } satisfies Partial<ExtensionError>);
+
+      // Should have made MAX_RETRIES + 1 = 4 attempts
+      expect(mockFetch).toHaveBeenCalledTimes(4);
+    });
+  });
+
+  describe('storage unavailable', () => {
+    it('falls back to unauthenticated when storage throws', async () => {
+      vi.mocked(
+        (globalThis as unknown as { chrome: { storage: { local: { get: ReturnType<typeof vi.fn> } } } }).chrome.storage.local.get,
+      ).mockRejectedValueOnce(new Error('storage unavailable'));
+
+      mockFetch.mockResolvedValueOnce(createSuccessResponse('content'));
+
+      const content = await client.fetchFileContent('owner', 'repo', 'main', 'file.ts');
+      expect(content).toBe('content');
+
+      // Should not have Authorization header
+      const callHeaders = mockFetch.mock.calls[0]?.[1]?.headers as Record<string, string>;
+      expect(callHeaders).not.toHaveProperty('Authorization');
+    });
+  });
 });
 
 describe('calculateBackoff', () => {

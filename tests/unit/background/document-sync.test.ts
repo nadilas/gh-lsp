@@ -343,4 +343,48 @@ describe('parseFileUri', () => {
     expect(parseFileUri('gh-lsp://owner')).toBeNull();
     expect(parseFileUri('gh-lsp://')).toBeNull();
   });
+
+  it('returns null for URI with empty owner segment', () => {
+    expect(parseFileUri('gh-lsp:///repo/main/file.ts')).toBeNull();
+  });
+
+  it('treats ref as only the third path segment (slashes in ref not round-tripped)', () => {
+    // buildFileUri with a ref containing '/' produces a URI that parseFileUri
+    // will split differently: ref='feat' and filePath='my-branch/src/file.ts'
+    const uri = buildFileUri('owner', 'repo', 'feat/my-branch', 'src/file.ts');
+    const parsed = parseFileUri(uri);
+
+    // This documents the known limitation: ref with slashes doesn't round-trip correctly
+    expect(parsed).not.toBeNull();
+    expect(parsed!.ref).toBe('feat');
+    expect(parsed!.filePath).toBe('my-branch/src/file.ts');
+  });
+});
+
+describe('DocumentSync — error propagation', () => {
+  it('propagates API fetch errors to the caller', async () => {
+    const apiClient = {
+      fetchFileContent: vi.fn(async () => {
+        throw { code: 'fetch_not_found', message: 'File not found' };
+      }),
+      getRateLimitInfo: vi.fn(() => null),
+      setRateLimitWarningCallback: vi.fn(),
+    } as unknown as GitHubApiClient;
+    const cache = new LruCache<string>(100, 600_000);
+    const sync = new DocumentSync(apiClient, cache);
+    const sendDidOpen = vi.fn();
+
+    await expect(
+      sync.ensureDocumentOpen(
+        'worker-1',
+        'owner',
+        'repo',
+        'main',
+        'missing.ts',
+        sendDidOpen,
+      ),
+    ).rejects.toMatchObject({ code: 'fetch_not_found' });
+
+    expect(sendDidOpen).not.toHaveBeenCalled();
+  });
 });
