@@ -36,7 +36,7 @@ Content Script (GitHub DOM) <-> Background Service Worker <-> Web Workers (WASM 
 
 ### Phase 3: LSP Worker Infrastructure
 
-- [ ] Implement JSON-RPC 2.0 transport (`src/workers/lsp-worker.ts`): postMessage-based request/response/notification handling, error codes
+- [x] Implement JSON-RPC 2.0 transport (`src/workers/lsp-worker.ts`): postMessage-based request/response/notification handling, error codes
 - [ ] Implement virtual file system (`src/workers/vfs.ts`): in-memory file storage, URI-based lookup, file request notification
 - [ ] Implement language registry (`src/workers/language-registry.ts`): WASM binary loader, capability declarations per language
 - [ ] Implement worker pool manager (`src/background/worker-pool.ts`): spawn/reuse/evict workers, idle timeout, max concurrency, crash recovery
