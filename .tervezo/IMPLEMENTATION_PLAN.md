@@ -30,7 +30,7 @@ Content Script (GitHub DOM) <-> Background Service Worker <-> Web Workers (WASM 
 
 - [ ] Implement background entry point (`src/background/index.ts`): message listener setup, initialization
 - [ ] Implement GitHub API client (`src/background/github-api.ts`): authenticated/unauthenticated requests, rate limit handling with exponential backoff, file content fetching
-- [ ] Implement response cache (`src/background/cache.ts`): LRU cache with TTL, keyed by repo/ref/file/position, invalidation on ref change
+- [x] Implement response cache (`src/background/cache.ts`): LRU cache with TTL, keyed by repo/ref/file/position, invalidation on ref change
 - [ ] Implement document sync (`src/background/document-sync.ts`): fetch file content from GitHub API or cache, manage `textDocument/didOpen` notifications
 - [ ] Write unit tests for GitHub API client and cache
 
