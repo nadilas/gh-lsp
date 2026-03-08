@@ -24,7 +24,7 @@ Content Script (GitHub DOM) <-> Background Service Worker <-> Web Workers (WASM 
 - [x] Create message protocol (`src/shared/messages.ts`): typed message schemas for content-to-background communication
 - [x] Create constants (`src/shared/constants.ts`): debounce defaults, cache TTLs, worker limits
 - [x] Create settings schema with defaults (`src/shared/settings.ts`): read/write helpers using `chrome.storage.sync`
-- [ ] Create language registry (`src/shared/languages.ts`): file extension to language ID mapping, WASM binary paths
+- [x] Create language registry (`src/shared/languages.ts`): file extension to language ID mapping, WASM binary paths
 
 ### Phase 2: Background Service Worker — Core
 
