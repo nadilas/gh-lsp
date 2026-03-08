@@ -384,6 +384,7 @@ describe('Popup', () => {
     const btn = container.querySelector('.gh-lsp-popup__options-btn');
     expect(btn).not.toBeNull();
     expect(btn?.textContent).toBe('Settings');
+    expect(btn?.getAttribute('aria-label')).toBe('Open extension settings');
   });
 
   it('calls openOptionsPage when settings button is clicked', async () => {

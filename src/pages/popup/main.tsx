@@ -272,6 +272,7 @@ export const Popup: FunctionComponent<PopupProps> = ({
           type="button"
           class="gh-lsp-popup__options-btn"
           onClick={handleOpenOptions}
+          aria-label="Open extension settings"
         >
           Settings
         </button>

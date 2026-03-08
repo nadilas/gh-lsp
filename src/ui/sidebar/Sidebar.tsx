@@ -13,7 +13,7 @@ import { ParameterList } from '../components/ParameterList';
 import { DefinitionLink } from '../components/DefinitionLink';
 import { LoadingState } from '../components/LoadingState';
 import { ErrorState } from '../components/ErrorState';
-import { createResizeHandler, isHorizontalPosition } from './resize';
+import { createResizeHandler, isHorizontalPosition, getMaxSize, clampSize } from './resize';
 
 // ─── Props ───────────────────────────────────────────────────────────────────
 
@@ -140,6 +140,32 @@ export const Sidebar: FunctionComponent<SidebarProps> = ({
     [position, effectiveSize, onSizeChange],
   );
 
+  // Keyboard resize via arrow keys on the resize handle
+  const RESIZE_STEP_PX = 20;
+  const handleResizeKeyDown = useCallback(
+    (e: KeyboardEvent) => {
+      const horizontal = isHorizontalPosition(position);
+      let delta = 0;
+
+      if (horizontal) {
+        if (e.key === 'ArrowLeft') delta = position === 'right' ? RESIZE_STEP_PX : -RESIZE_STEP_PX;
+        else if (e.key === 'ArrowRight') delta = position === 'right' ? -RESIZE_STEP_PX : RESIZE_STEP_PX;
+      } else {
+        if (e.key === 'ArrowUp') delta = position === 'bottom' ? RESIZE_STEP_PX : -RESIZE_STEP_PX;
+        else if (e.key === 'ArrowDown') delta = position === 'bottom' ? -RESIZE_STEP_PX : RESIZE_STEP_PX;
+      }
+
+      if (delta !== 0) {
+        e.preventDefault();
+        const maxSize = getMaxSize(position);
+        const newSize = clampSize(effectiveSize + delta, maxSize);
+        setInternalSize(newSize);
+        onSizeChange?.(newSize);
+      }
+    },
+    [position, effectiveSize, onSizeChange],
+  );
+
   // ─── Hidden state: render nothing ────────────────────────────────────────
 
   if (state === 'hidden') {
@@ -229,7 +255,13 @@ export const Sidebar: FunctionComponent<SidebarProps> = ({
           class="gh-lsp-sidebar__resize-handle"
           style={getResizeHandleStyle()}
           onMouseDown={handleResizeStart}
-          aria-hidden="true"
+          onKeyDown={handleResizeKeyDown}
+          role="separator"
+          aria-orientation={isHorizontalPosition(position) ? 'vertical' : 'horizontal'}
+          aria-valuenow={effectiveSize}
+          aria-valuemin={SIDEBAR_MIN_SIZE_PX}
+          aria-label="Resize sidebar"
+          tabIndex={0}
         />
       )}
 

@@ -488,11 +488,13 @@ describe('Sidebar', () => {
       expect(btn?.getAttribute('aria-label')).toBe('Collapse sidebar');
     });
 
-    it('resize handle has aria-hidden', () => {
+    it('resize handle has role="separator" for keyboard accessibility', () => {
       const props = createProps({ state: 'expanded' });
       container = renderSidebar(props);
       const handle = container.querySelector('.gh-lsp-sidebar__resize-handle');
-      expect(handle?.getAttribute('aria-hidden')).toBe('true');
+      expect(handle?.getAttribute('role')).toBe('separator');
+      expect(handle?.getAttribute('tabindex')).toBe('0');
+      expect(handle?.getAttribute('aria-label')).toBe('Resize sidebar');
     });
 
     it('content area has aria-live="polite"', () => {
@@ -640,6 +642,119 @@ describe('Sidebar', () => {
       container = renderSidebar(createProps({ position: 'left' }));
       const sidebar = getSidebarElement(container);
       expect(sidebar?.getAttribute('data-position')).toBe('left');
+    });
+  });
+
+  describe('resize handle accessibility', () => {
+    it('has role="separator" when expanded', () => {
+      container = renderSidebar(createProps({ state: 'expanded', position: 'right' }));
+      const handle = container.querySelector('.gh-lsp-sidebar__resize-handle');
+      expect(handle?.getAttribute('role')).toBe('separator');
+    });
+
+    it('has tabindex="0" for keyboard focusability', () => {
+      container = renderSidebar(createProps({ state: 'expanded', position: 'right' }));
+      const handle = container.querySelector('.gh-lsp-sidebar__resize-handle');
+      expect(handle?.getAttribute('tabindex')).toBe('0');
+    });
+
+    it('has aria-orientation="vertical" for horizontal positions', () => {
+      container = renderSidebar(createProps({ state: 'expanded', position: 'right' }));
+      const handle = container.querySelector('.gh-lsp-sidebar__resize-handle');
+      expect(handle?.getAttribute('aria-orientation')).toBe('vertical');
+    });
+
+    it('has aria-orientation="horizontal" for vertical positions', () => {
+      container = renderSidebar(createProps({ state: 'expanded', position: 'bottom' }));
+      const handle = container.querySelector('.gh-lsp-sidebar__resize-handle');
+      expect(handle?.getAttribute('aria-orientation')).toBe('horizontal');
+    });
+
+    it('has aria-valuenow reflecting current size', () => {
+      container = renderSidebar(createProps({ state: 'expanded', size: 350 }));
+      const handle = container.querySelector('.gh-lsp-sidebar__resize-handle');
+      expect(handle?.getAttribute('aria-valuenow')).toBe('350');
+    });
+
+    it('has aria-valuemin reflecting minimum size', () => {
+      container = renderSidebar(createProps({ state: 'expanded' }));
+      const handle = container.querySelector('.gh-lsp-sidebar__resize-handle');
+      expect(handle?.getAttribute('aria-valuemin')).toBe('200');
+    });
+
+    it('has aria-label for screen readers', () => {
+      container = renderSidebar(createProps({ state: 'expanded' }));
+      const handle = container.querySelector('.gh-lsp-sidebar__resize-handle');
+      expect(handle?.getAttribute('aria-label')).toBe('Resize sidebar');
+    });
+
+    it('increases size with ArrowLeft on right-positioned sidebar', async () => {
+      const onSizeChange = vi.fn();
+      container = renderSidebar(createProps({
+        state: 'expanded',
+        position: 'right',
+        size: 300,
+        onSizeChange,
+      }));
+      await flushEffects();
+
+      const handle = container.querySelector('.gh-lsp-sidebar__resize-handle') as HTMLElement;
+      const event = new KeyboardEvent('keydown', { key: 'ArrowLeft', bubbles: true });
+      handle.dispatchEvent(event);
+
+      expect(onSizeChange).toHaveBeenCalledWith(320);
+    });
+
+    it('decreases size with ArrowRight on right-positioned sidebar', async () => {
+      const onSizeChange = vi.fn();
+      container = renderSidebar(createProps({
+        state: 'expanded',
+        position: 'right',
+        size: 300,
+        onSizeChange,
+      }));
+      await flushEffects();
+
+      const handle = container.querySelector('.gh-lsp-sidebar__resize-handle') as HTMLElement;
+      const event = new KeyboardEvent('keydown', { key: 'ArrowRight', bubbles: true });
+      handle.dispatchEvent(event);
+
+      expect(onSizeChange).toHaveBeenCalledWith(280);
+    });
+
+    it('does not resize below minimum size', async () => {
+      const onSizeChange = vi.fn();
+      container = renderSidebar(createProps({
+        state: 'expanded',
+        position: 'right',
+        size: 200,
+        onSizeChange,
+      }));
+      await flushEffects();
+
+      const handle = container.querySelector('.gh-lsp-sidebar__resize-handle') as HTMLElement;
+      const event = new KeyboardEvent('keydown', { key: 'ArrowRight', bubbles: true });
+      handle.dispatchEvent(event);
+
+      // Should clamp to 200 (min)
+      expect(onSizeChange).toHaveBeenCalledWith(200);
+    });
+
+    it('resizes vertically with ArrowUp on bottom-positioned sidebar', async () => {
+      const onSizeChange = vi.fn();
+      container = renderSidebar(createProps({
+        state: 'expanded',
+        position: 'bottom',
+        size: 300,
+        onSizeChange,
+      }));
+      await flushEffects();
+
+      const handle = container.querySelector('.gh-lsp-sidebar__resize-handle') as HTMLElement;
+      const event = new KeyboardEvent('keydown', { key: 'ArrowUp', bubbles: true });
+      handle.dispatchEvent(event);
+
+      expect(onSizeChange).toHaveBeenCalledWith(320);
     });
   });
 });

@@ -358,6 +358,22 @@ describe('Options', () => {
     });
   });
 
+  it('PAT save button has aria-label', async () => {
+    container = await renderOptions();
+    const saveBtn = Array.from(
+      container.querySelectorAll('.gh-lsp-options__btn'),
+    ).find((btn) => btn.textContent === 'Save') as HTMLElement;
+    expect(saveBtn.getAttribute('aria-label')).toBe('Save personal access token');
+  });
+
+  it('PAT validate button has aria-label', async () => {
+    container = await renderOptions();
+    const validateBtn = Array.from(
+      container.querySelectorAll('.gh-lsp-options__btn'),
+    ).find((btn) => btn.textContent === 'Validate') as HTMLElement;
+    expect(validateBtn.getAttribute('aria-label')).toBe('Validate personal access token');
+  });
+
   it('saves PAT via Save button', async () => {
     // Pre-populate PAT from secure settings so patInput state is already set
     container = await renderOptions({}, {}, { githubPat: 'ghp_existing_token' });

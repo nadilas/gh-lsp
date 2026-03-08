@@ -416,6 +416,13 @@
   opacity: 0.4;
 }
 
+.gh-lsp-sidebar__resize-handle:focus-visible {
+  outline: 2px solid var(--ghlsp-focus-ring);
+  outline-offset: -2px;
+  background: var(--ghlsp-link);
+  opacity: 0.3;
+}
+
 /* Reduced motion support */
 @media (prefers-reduced-motion: reduce) {
   :host,

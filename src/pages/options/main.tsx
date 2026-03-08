@@ -395,6 +395,7 @@ export const Options: FunctionComponent<OptionsProps> = ({ fetchFn }) => {
               type="button"
               class="gh-lsp-options__btn"
               onClick={handlePatSave}
+              aria-label="Save personal access token"
             >
               Save
             </button>
@@ -403,6 +404,7 @@ export const Options: FunctionComponent<OptionsProps> = ({ fetchFn }) => {
               class="gh-lsp-options__btn"
               onClick={handlePatValidate}
               disabled={patValidation === 'validating'}
+              aria-label="Validate personal access token"
             >
               {patValidation === 'validating' ? 'Validating...' : 'Validate'}
             </button>
