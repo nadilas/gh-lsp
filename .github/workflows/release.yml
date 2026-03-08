@@ -1,0 +1,64 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*.*.*'
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    name: Build & Release
+    runs-on: macos-latest
+    timeout-minutes: 30
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'pnpm'
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Lint & Typecheck
+        run: pnpm lint && pnpm typecheck
+
+      - name: Run tests
+        run: pnpm test
+
+      - name: Build Chrome extension
+        run: pnpm build
+
+      - name: Package Chrome extension (.zip)
+        run: |
+          cd dist/chrome
+          zip -r ../../gh-lsp-chrome-${{ github.ref_name }}.zip .
+          cd ../..
+
+      - name: Build Safari extension (if converter available)
+        run: |
+          if xcrun --find safari-web-extension-converter &>/dev/null; then
+            bash scripts/build-safari.sh
+            echo "SAFARI_BUILD=true" >> $GITHUB_ENV
+          else
+            echo "safari-web-extension-converter not found, skipping Safari build"
+            echo "SAFARI_BUILD=false" >> $GITHUB_ENV
+          fi
+        continue-on-error: true
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          generate_release_notes: true
+          files: |
+            gh-lsp-chrome-${{ github.ref_name }}.zip
