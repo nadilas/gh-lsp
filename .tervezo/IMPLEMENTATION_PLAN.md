@@ -40,8 +40,8 @@ Content Script (GitHub DOM) <-> Background Service Worker <-> Web Workers (WASM 
 - [x] Implement virtual file system (`src/workers/vfs.ts`): in-memory file storage, URI-based lookup, file request notification
 - [x] Implement language registry (`src/workers/language-registry.ts`): WASM binary loader, capability declarations per language
 - [x] Implement worker pool manager (`src/background/worker-pool.ts`): spawn/reuse/evict workers, idle timeout, max concurrency, crash recovery
-- [ ] Implement LSP router (`src/background/lsp-router.ts`): language detection from file extension, request routing to correct worker, response forwarding
-- [ ] Write unit tests for JSON-RPC transport, VFS, worker pool, and LSP router
+- [x] Implement LSP router (`src/background/lsp-router.ts`): language detection from file extension, request routing to correct worker, response forwarding
+- [x] Write unit tests for JSON-RPC transport, VFS, worker pool, and LSP router
 
 ### Phase 4: WASM Language Server Integration
 
