@@ -11,6 +11,12 @@ import {
   MAX_POPOVER_HEIGHT_PX,
   SCROLL_DISMISS_THRESHOLD_PX,
 } from '../../shared/constants';
+import { SignatureDisplay } from '../components/SignatureDisplay';
+import { MarkdownRenderer } from '../components/MarkdownRenderer';
+import { ParameterList } from '../components/ParameterList';
+import { DefinitionLink } from '../components/DefinitionLink';
+import { LoadingState } from '../components/LoadingState';
+import { ErrorState } from '../components/ErrorState';
 
 // ─── Props ───────────────────────────────────────────────────────────────────
 
@@ -192,12 +198,12 @@ export const Popover: FunctionComponent<PopoverProps> = ({
           overflow: 'auto',
         }}
       >
-        {state === 'loading' && <LoadingContent />}
+        {state === 'loading' && <LoadingState />}
         {(state === 'visible' || state === 'pinned') && data && (
           <HoverContent data={data} />
         )}
         {state === 'error' && error && (
-          <ErrorContent error={error} onRetry={onRetry} onDismiss={onDismiss} />
+          <ErrorState error={error} onRetry={onRetry} onDismiss={onDismiss} />
         )}
       </div>
 
@@ -227,14 +233,7 @@ export const Popover: FunctionComponent<PopoverProps> = ({
   );
 };
 
-// ─── Sub-components ──────────────────────────────────────────────────────────
-
-const LoadingContent: FunctionComponent = () => (
-  <div class="gh-lsp-popover__loading" aria-label="Loading type information">
-    <div class="gh-lsp-popover__skeleton gh-lsp-popover__skeleton--line" />
-    <div class="gh-lsp-popover__skeleton gh-lsp-popover__skeleton--line gh-lsp-popover__skeleton--short" />
-  </div>
-);
+// ─── HoverContent (uses extracted subcomponents) ─────────────────────────────
 
 interface HoverContentProps {
   data: HoverDisplayData;
@@ -242,88 +241,21 @@ interface HoverContentProps {
 
 const HoverContent: FunctionComponent<HoverContentProps> = ({ data }) => (
   <div class="gh-lsp-popover__hover-content">
-    <pre class="gh-lsp-popover__signature">
-      <code class={`language-${data.language}`}>{data.signature}</code>
-    </pre>
+    <SignatureDisplay signature={data.signature} language={data.language} />
 
     {data.documentation && (
-      <div class="gh-lsp-popover__documentation">{data.documentation}</div>
+      <MarkdownRenderer content={data.documentation} />
     )}
 
     {data.parameters && data.parameters.length > 0 && (
-      <div class="gh-lsp-popover__parameters">
-        {data.parameters.map((param) => (
-          <div class="gh-lsp-popover__param" key={param.name}>
-            <span class="gh-lsp-popover__param-name">{param.name}</span>
-            <span class="gh-lsp-popover__param-type">: {param.type}</span>
-            {param.defaultValue && (
-              <span class="gh-lsp-popover__param-default">
-                {' '}= {param.defaultValue}
-              </span>
-            )}
-            {param.documentation && (
-              <span class="gh-lsp-popover__param-doc">
-                {' '}&mdash; {param.documentation}
-              </span>
-            )}
-          </div>
-        ))}
-      </div>
+      <ParameterList parameters={data.parameters} />
     )}
 
     {data.definitionLocation && (
-      <div class="gh-lsp-popover__definition">
-        <a
-          class="gh-lsp-popover__definition-link"
-          href={data.definitionLocation.uri}
-          target="_blank"
-          rel="noopener noreferrer"
-          aria-label="Go to definition"
-        >
-          Go to Definition
-        </a>
-        {data.declarationSource && (
-          <span class="gh-lsp-popover__declaration-source">
-            {' '}in {data.declarationSource}
-          </span>
-        )}
-      </div>
+      <DefinitionLink
+        location={data.definitionLocation}
+        declarationSource={data.declarationSource}
+      />
     )}
-  </div>
-);
-
-interface ErrorContentProps {
-  error: ExtensionError;
-  onRetry?: () => void;
-  onDismiss: () => void;
-}
-
-const ErrorContent: FunctionComponent<ErrorContentProps> = ({
-  error,
-  onRetry,
-  onDismiss,
-}) => (
-  <div class="gh-lsp-popover__error" role="alert">
-    <span class="gh-lsp-popover__error-message">{error.message}</span>
-    <div class="gh-lsp-popover__error-actions">
-      {error.code !== 'unsupported_language' && onRetry && (
-        <button
-          class="gh-lsp-popover__retry-btn"
-          onClick={onRetry}
-          type="button"
-          aria-label="Retry"
-        >
-          Retry
-        </button>
-      )}
-      <button
-        class="gh-lsp-popover__dismiss-btn"
-        onClick={onDismiss}
-        type="button"
-        aria-label="Dismiss error"
-      >
-        Dismiss
-      </button>
-    </div>
   </div>
 );

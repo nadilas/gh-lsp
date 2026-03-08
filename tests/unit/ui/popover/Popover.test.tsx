@@ -8,6 +8,7 @@ import type {
 } from '../../../../src/shared/types';
 import {
   MAX_POPOVER_HEIGHT_PX,
+  LOADING_INDICATOR_DELAY_MS,
   POPOVER_FADE_DURATION_MS,
   SCROLL_DISMISS_THRESHOLD_PX,
 } from '../../../../src/shared/constants';
@@ -116,12 +117,15 @@ describe('Popover', () => {
   });
 
   describe('loading state', () => {
-    it('renders skeleton loading UI', () => {
+    it('renders skeleton loading UI after delay', async () => {
       const props = createProps({ state: 'loading', data: null });
       container = renderPopover(props);
 
       const popover = getPopoverElement(container);
       expect(popover).not.toBeNull();
+
+      // LoadingState has a built-in delay to avoid flicker
+      await new Promise((resolve) => setTimeout(resolve, LOADING_INDICATOR_DELAY_MS + 50));
 
       const loading = popover!.querySelector('.gh-lsp-popover__loading');
       expect(loading).not.toBeNull();
@@ -130,9 +134,12 @@ describe('Popover', () => {
       expect(skeletons.length).toBeGreaterThan(0);
     });
 
-    it('has aria-label for loading state', () => {
+    it('has aria-label for loading state', async () => {
       const props = createProps({ state: 'loading', data: null });
       container = renderPopover(props);
+
+      // Wait for LoadingState delay
+      await new Promise((resolve) => setTimeout(resolve, LOADING_INDICATOR_DELAY_MS + 50));
 
       const loading = container.querySelector('.gh-lsp-popover__loading');
       expect(loading?.getAttribute('aria-label')).toBe('Loading type information');
