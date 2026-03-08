@@ -22,7 +22,7 @@ Content Script (GitHub DOM) <-> Background Service Worker <-> Web Workers (WASM 
 
 - [x] Create shared TypeScript types (`src/shared/types.ts`): LSP message types, extension message types, settings types, language definitions
 - [x] Create message protocol (`src/shared/messages.ts`): typed message schemas for content-to-background communication
-- [ ] Create constants (`src/shared/constants.ts`): debounce defaults, cache TTLs, worker limits
+- [x] Create constants (`src/shared/constants.ts`): debounce defaults, cache TTLs, worker limits
 - [ ] Create settings schema with defaults (`src/shared/settings.ts`): read/write helpers using `chrome.storage.sync`
 - [ ] Create language registry (`src/shared/languages.ts`): file extension to language ID mapping, WASM binary paths
 
