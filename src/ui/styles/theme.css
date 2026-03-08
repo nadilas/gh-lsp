@@ -1,0 +1,85 @@
+/* gh-lsp theme variables — light theme (default) */
+:host {
+  --ghlsp-bg: #ffffff;
+  --ghlsp-text: #1f2328;
+  --ghlsp-text-secondary: #656d76;
+  --ghlsp-border: #d0d7de;
+  --ghlsp-code-bg: #f6f8fa;
+  --ghlsp-code-text: #1f2328;
+  --ghlsp-link: #0969da;
+  --ghlsp-link-hover: #0550ae;
+  --ghlsp-error: #cf222e;
+  --ghlsp-error-bg: #ffebe9;
+  --ghlsp-loading: #d0d7de;
+  --ghlsp-loading-shimmer: #eaeef2;
+  --ghlsp-shadow: rgba(31, 35, 40, 0.12);
+  --ghlsp-shadow-lg: rgba(31, 35, 40, 0.2);
+  --ghlsp-scrollbar-thumb: rgba(31, 35, 40, 0.15);
+  --ghlsp-scrollbar-thumb-hover: rgba(31, 35, 40, 0.3);
+  --ghlsp-focus-ring: #0969da;
+  --ghlsp-button-bg: #f6f8fa;
+  --ghlsp-button-bg-hover: #eaeef2;
+  --ghlsp-button-border: #d0d7de;
+  --ghlsp-param-name: #0550ae;
+  --ghlsp-param-type: #8250df;
+  --ghlsp-keyword: #cf222e;
+
+  /* Typography */
+  --ghlsp-font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Noto Sans', Helvetica, Arial, sans-serif;
+  --ghlsp-font-mono: ui-monospace, SFMono-Regular, 'SF Mono', Menlo, Consolas, 'Liberation Mono', monospace;
+  --ghlsp-font-size: 13px;
+  --ghlsp-font-size-small: 12px;
+  --ghlsp-line-height: 1.5;
+
+  /* Spacing */
+  --ghlsp-padding: 12px;
+  --ghlsp-padding-compact: 8px;
+  --ghlsp-border-radius: 6px;
+
+  /* Transitions */
+  --ghlsp-transition-fast: 150ms ease;
+  --ghlsp-transition-normal: 200ms ease;
+}
+
+/* gh-lsp theme variables — dark theme */
+:host([data-theme="dark"]) {
+  --ghlsp-bg: #161b22;
+  --ghlsp-text: #e6edf3;
+  --ghlsp-text-secondary: #8b949e;
+  --ghlsp-border: #30363d;
+  --ghlsp-code-bg: #0d1117;
+  --ghlsp-code-text: #e6edf3;
+  --ghlsp-link: #58a6ff;
+  --ghlsp-link-hover: #79c0ff;
+  --ghlsp-error: #f85149;
+  --ghlsp-error-bg: rgba(248, 81, 73, 0.1);
+  --ghlsp-loading: #30363d;
+  --ghlsp-loading-shimmer: #21262d;
+  --ghlsp-shadow: rgba(0, 0, 0, 0.3);
+  --ghlsp-shadow-lg: rgba(0, 0, 0, 0.5);
+  --ghlsp-scrollbar-thumb: rgba(230, 237, 243, 0.15);
+  --ghlsp-scrollbar-thumb-hover: rgba(230, 237, 243, 0.3);
+  --ghlsp-focus-ring: #58a6ff;
+  --ghlsp-button-bg: #21262d;
+  --ghlsp-button-bg-hover: #30363d;
+  --ghlsp-button-border: #30363d;
+  --ghlsp-param-name: #79c0ff;
+  --ghlsp-param-type: #d2a8ff;
+  --ghlsp-keyword: #ff7b72;
+}
+
+/* Reduced motion support */
+@media (prefers-reduced-motion: reduce) {
+  :host,
+  :host([data-theme="dark"]) {
+    --ghlsp-transition-fast: 0.01ms !important;
+    --ghlsp-transition-normal: 0.01ms !important;
+  }
+
+  :host *,
+  :host([data-theme="dark"]) * {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
