@@ -583,6 +583,8 @@ export class GhLspContentScript {
           const cmd = (message as { command: string }).command;
           if (cmd === 'pin-popover') {
             this.pinPopover();
+          } else if (cmd === 'toggle-sidebar') {
+            this.toggleSidebar();
           }
         }
       };

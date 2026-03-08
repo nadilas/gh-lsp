@@ -754,6 +754,59 @@ describe('GhLspContentScript', () => {
       expect(script.getPopoverState()).toBe('visible');
     });
 
+    it('toggle-sidebar command toggles sidebar collapsed/expanded', async () => {
+      setupChromeMock({ displayMode: 'sidebar' });
+      setLocationTo('https://github.com/owner/repo/blob/main/src/index.ts');
+      script = new GhLspContentScript();
+      await script.initialize();
+
+      expect(script.getSidebarState()).toBe('expanded');
+
+      // Send toggle-sidebar command
+      for (const listener of messageListeners) {
+        listener(
+          { command: 'toggle-sidebar' },
+          {} as chrome.runtime.MessageSender,
+          vi.fn(),
+        );
+      }
+
+      expect(script.getSidebarState()).toBe('collapsed');
+
+      // Send again to expand
+      for (const listener of messageListeners) {
+        listener(
+          { command: 'toggle-sidebar' },
+          {} as chrome.runtime.MessageSender,
+          vi.fn(),
+        );
+      }
+
+      expect(script.getSidebarState()).toBe('expanded');
+    });
+
+    it('toggle-sidebar is a no-op when in popover mode', async () => {
+      setLocationTo('https://github.com/owner/repo/blob/main/src/index.ts');
+      script = new GhLspContentScript();
+      await script.initialize();
+
+      expect(script.getDisplayMode()).toBe('popover');
+      expect(script.getSidebarState()).toBe('hidden');
+
+      // Send toggle-sidebar command — sidebar state is 'hidden', no-op
+      for (const listener of messageListeners) {
+        listener(
+          { command: 'toggle-sidebar' },
+          {} as chrome.runtime.MessageSender,
+          vi.fn(),
+        );
+      }
+
+      // toggleSidebar only toggles between expanded/collapsed, not hidden
+      expect(script.getSidebarState()).toBe('hidden');
+      expect(script.getState()).toBe('active');
+    });
+
     it('ignores unknown commands', async () => {
       setLocationTo('https://github.com/owner/repo/blob/main/src/index.ts');
       script = new GhLspContentScript();

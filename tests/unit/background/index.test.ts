@@ -278,24 +278,34 @@ describe('background/index', () => {
       expect(stored.enabled).toBe(false);
     });
 
-    it('toggle-sidebar switches displayMode from popover to sidebar', async () => {
+    it('toggle-sidebar forwards command to the active tab', async () => {
+      tabsSendMessage.mockClear();
+
       simulateCommand('toggle-sidebar');
 
       await flush();
 
-      const stored = syncStore['gh-lsp-settings'] as ExtensionSettings;
-      expect(stored.displayMode).toBe('sidebar');
+      expect(tabsQuery).toHaveBeenCalledWith({
+        active: true,
+        currentWindow: true,
+      });
+      expect(tabsSendMessage).toHaveBeenCalledWith(1, {
+        command: 'toggle-sidebar',
+      });
     });
 
-    it('toggle-sidebar cycles back to popover', async () => {
-      syncStore['gh-lsp-settings'] = { displayMode: 'sidebar' };
+    it('toggle-sidebar handles no active tab gracefully', async () => {
+      tabsQuery.mockResolvedValueOnce([]);
+      tabsSendMessage.mockClear();
 
       simulateCommand('toggle-sidebar');
 
       await flush();
 
-      const stored = syncStore['gh-lsp-settings'] as ExtensionSettings;
-      expect(stored.displayMode).toBe('popover');
+      expect(tabsSendMessage).not.toHaveBeenCalledWith(
+        expect.anything(),
+        { command: 'toggle-sidebar' },
+      );
     });
 
     it('pin-popover forwards command to the active tab', async () => {

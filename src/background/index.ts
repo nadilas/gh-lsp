@@ -171,14 +171,9 @@ async function handleCommand(command: string): Promise<void> {
       break;
     }
 
-    case 'toggle-sidebar': {
-      const settings = await getSettings();
-      const nextMode =
-        settings.displayMode === 'popover' ? 'sidebar' : 'popover';
-      await saveSettings({ displayMode: nextMode });
-      // Storage change listener broadcasts to content scripts automatically
+    case 'toggle-sidebar':
+      await forwardCommandToActiveTab('toggle-sidebar');
       break;
-    }
 
     case 'pin-popover':
       await forwardCommandToActiveTab('pin-popover');
