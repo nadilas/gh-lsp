@@ -494,6 +494,27 @@ describe('Sidebar', () => {
       const handle = container.querySelector('.gh-lsp-sidebar__resize-handle');
       expect(handle?.getAttribute('aria-hidden')).toBe('true');
     });
+
+    it('content area has aria-live="polite"', () => {
+      const props = createProps({ state: 'expanded' });
+      container = renderSidebar(props);
+      const content = container.querySelector('.gh-lsp-sidebar__content');
+      expect(content?.getAttribute('aria-live')).toBe('polite');
+    });
+
+    it('content area has aria-busy when loading', () => {
+      const props = createProps({ state: 'expanded', loading: true, data: null });
+      container = renderSidebar(props);
+      const content = container.querySelector('.gh-lsp-sidebar__content');
+      expect(content?.getAttribute('aria-busy')).toBe('true');
+    });
+
+    it('content area has aria-busy=false when not loading', () => {
+      const props = createProps({ state: 'expanded', loading: false });
+      container = renderSidebar(props);
+      const content = container.querySelector('.gh-lsp-sidebar__content');
+      expect(content?.getAttribute('aria-busy')).toBe('false');
+    });
   });
 
   describe('custom size', () => {

@@ -439,6 +439,93 @@ describe('Popover', () => {
       const link = container.querySelector('.gh-lsp-popover__definition-link');
       expect(link?.getAttribute('aria-label')).toBe('Go to definition');
     });
+
+    it('content area has aria-busy when loading', () => {
+      const props = createProps({ state: 'loading', data: null });
+      container = renderPopover(props);
+
+      const content = container.querySelector('.gh-lsp-popover__content');
+      expect(content?.getAttribute('aria-busy')).toBe('true');
+    });
+
+    it('content area has aria-busy=false when visible', () => {
+      const props = createProps({ state: 'visible' });
+      container = renderPopover(props);
+
+      const content = container.querySelector('.gh-lsp-popover__content');
+      expect(content?.getAttribute('aria-busy')).toBe('false');
+    });
+
+    it('loading indicator has role="status"', async () => {
+      const props = createProps({ state: 'loading', data: null });
+      container = renderPopover(props);
+
+      await new Promise((resolve) => setTimeout(resolve, LOADING_INDICATOR_DELAY_MS + 50));
+
+      const loading = container.querySelector('.gh-lsp-popover__loading');
+      expect(loading?.getAttribute('role')).toBe('status');
+    });
+  });
+
+  describe('focus trap (pinned state)', () => {
+    it('popover contains multiple focusable elements when pinned', async () => {
+      const props = createProps({ state: 'pinned' });
+      container = renderPopover(props);
+      await flushEffects();
+
+      const popover = getPopoverElement(container)!;
+      const focusable = popover.querySelectorAll('a[href], button:not([disabled])');
+      // Should have at least close button and definition link
+      expect(focusable.length).toBeGreaterThanOrEqual(2);
+    });
+
+    it('Tab event preventDefault is called when focus wraps in pinned popover', async () => {
+      const props = createProps({ state: 'pinned' });
+      container = renderPopover(props);
+      await flushEffects();
+      await new Promise((r) => setTimeout(r, 50));
+
+      const popover = getPopoverElement(container)!;
+      const focusable = Array.from(
+        popover.querySelectorAll<HTMLElement>('a[href], button:not([disabled])'),
+      );
+      expect(focusable.length).toBeGreaterThanOrEqual(2);
+
+      // Spy on focus() calls to the first focusable element
+      const firstFocusSpy = vi.spyOn(focusable[0]!, 'focus');
+
+      // Focus the last element so the forward-Tab condition triggers
+      focusable[focusable.length - 1]!.focus();
+
+      const tabEvent = new KeyboardEvent('keydown', {
+        key: 'Tab',
+        bubbles: true,
+        cancelable: true,
+      });
+      document.dispatchEvent(tabEvent);
+
+      // Verify the focus trap tried to wrap focus to the first element.
+      // In jsdom, document.activeElement may not update reliably, but
+      // the focus trap will call first.focus() when wrapping.
+      expect(firstFocusSpy).toHaveBeenCalled();
+    });
+
+    it('does not trap Tab when popover is not pinned', async () => {
+      const props = createProps({ state: 'visible' });
+      container = renderPopover(props);
+      await flushEffects();
+
+      const tabEvent = new KeyboardEvent('keydown', {
+        key: 'Tab',
+        bubbles: true,
+        cancelable: true,
+      });
+      const preventDefaultSpy = vi.spyOn(tabEvent, 'preventDefault');
+      document.dispatchEvent(tabEvent);
+
+      // Focus trap should NOT call preventDefault when not pinned
+      expect(preventDefaultSpy).not.toHaveBeenCalled();
+    });
   });
 
   describe('dismiss on Escape', () => {
@@ -446,7 +533,9 @@ describe('Popover', () => {
       const onDismiss = vi.fn();
       const props = createProps({ onDismiss });
       container = renderPopover(props);
+      // Flush Preact effects — extra ticks needed for listener registration
       await flushEffects();
+      await new Promise((r) => setTimeout(r, 50));
 
       const event = new KeyboardEvent('keydown', { key: 'Escape', bubbles: true });
       document.dispatchEvent(event);
@@ -458,6 +547,7 @@ describe('Popover', () => {
       const props = createProps({ onDismiss });
       container = renderPopover(props);
       await flushEffects();
+      await new Promise((r) => setTimeout(r, 50));
 
       const event = new KeyboardEvent('keydown', { key: 'Enter', bubbles: true });
       document.dispatchEvent(event);

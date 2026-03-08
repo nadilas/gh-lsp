@@ -34,7 +34,7 @@ export const LoadingState: FunctionComponent<LoadingStateProps> = ({
   }
 
   return (
-    <div class="gh-lsp-popover__loading" aria-label="Loading type information">
+    <div class="gh-lsp-popover__loading" role="status" aria-label="Loading type information" aria-busy="true">
       <div class="gh-lsp-popover__skeleton gh-lsp-popover__skeleton--line" />
       <div class="gh-lsp-popover__skeleton gh-lsp-popover__skeleton--line gh-lsp-popover__skeleton--short" />
     </div>

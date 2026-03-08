@@ -96,7 +96,7 @@ export const Popover: FunctionComponent<PopoverProps> = ({
     }, POPOVER_FADE_DURATION_MS);
   }, [state, clearDismissTimer, onDismiss, prefersReducedMotion]);
 
-  // Escape key listener
+  // Escape key listener + focus trap for pinned popover
   useEffect(() => {
     if (state === 'hidden') return;
 
@@ -106,10 +106,49 @@ export const Popover: FunctionComponent<PopoverProps> = ({
         clearDismissTimer();
         setIsFadingOut(false);
         onDismiss();
+        return;
+      }
+
+      // Focus trap: only active when pinned — Tab cycles through interactive elements
+      if (e.key === 'Tab' && state === 'pinned' && popoverRef.current) {
+        const popover = popoverRef.current;
+        const focusableSelector =
+          'a[href], button:not([disabled]), input:not([disabled]), [tabindex]:not([tabindex="-1"])';
+        const focusable = Array.from(
+          popover.querySelectorAll<HTMLElement>(focusableSelector),
+        );
+
+        if (focusable.length === 0) return;
+
+        const first = focusable[0]!;
+        const last = focusable[focusable.length - 1]!;
+
+        if (e.shiftKey) {
+          if (document.activeElement === first || !popover.contains(document.activeElement)) {
+            e.preventDefault();
+            last.focus();
+          }
+        } else {
+          if (document.activeElement === last || !popover.contains(document.activeElement)) {
+            e.preventDefault();
+            first.focus();
+          }
+        }
       }
     };
 
     document.addEventListener('keydown', handleKeyDown);
+
+    // Move focus into the popover when pinned
+    if (state === 'pinned' && popoverRef.current) {
+      const focusable = popoverRef.current.querySelectorAll<HTMLElement>(
+        'a[href], button:not([disabled]), input:not([disabled]), [tabindex]:not([tabindex="-1"])',
+      );
+      if (focusable.length > 0) {
+        focusable[0]!.focus();
+      }
+    }
+
     return () => document.removeEventListener('keydown', handleKeyDown);
   }, [state, onDismiss, clearDismissTimer]);
 
@@ -197,6 +236,7 @@ export const Popover: FunctionComponent<PopoverProps> = ({
           maxHeight: `${MAX_POPOVER_HEIGHT_PX}px`,
           overflow: 'auto',
         }}
+        aria-busy={state === 'loading'}
       >
         {state === 'loading' && <LoadingState />}
         {(state === 'visible' || state === 'pinned') && data && (

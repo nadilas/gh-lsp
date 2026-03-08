@@ -253,7 +253,7 @@ export const Sidebar: FunctionComponent<SidebarProps> = ({
 
       {/* Content area (only when expanded) */}
       {state === 'expanded' && (
-        <div class="gh-lsp-sidebar__content">
+        <div class="gh-lsp-sidebar__content" aria-live="polite" aria-busy={loading}>
           {loading && <LoadingState />}
 
           {!loading && !data && !error && (

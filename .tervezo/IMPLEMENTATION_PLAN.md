@@ -89,7 +89,7 @@ Content Script (GitHub DOM) <-> Background Service Worker <-> Web Workers (WASM 
 
 ### Phase 10: Accessibility & Polish
 
-- [ ] Add ARIA attributes to popover and sidebar
+- [x] Add ARIA attributes to popover and sidebar
 - [ ] Ensure keyboard focusability for all interactive elements
 - [ ] Implement `prefers-reduced-motion` respect and `chrome.i18n` support
 

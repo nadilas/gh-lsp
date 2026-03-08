@@ -94,6 +94,22 @@ describe('LoadingState', () => {
     expect(loading?.getAttribute('aria-label')).toBe('Loading type information');
   });
 
+  it('has role="status" for screen readers', async () => {
+    container = renderComponent(0);
+    await waitFor(20);
+
+    const loading = container.querySelector('.gh-lsp-popover__loading');
+    expect(loading?.getAttribute('role')).toBe('status');
+  });
+
+  it('has aria-busy="true" while loading', async () => {
+    container = renderComponent(0);
+    await waitFor(20);
+
+    const loading = container.querySelector('.gh-lsp-popover__loading');
+    expect(loading?.getAttribute('aria-busy')).toBe('true');
+  });
+
   it('uses custom delay when provided', async () => {
     container = renderComponent(300);
 
