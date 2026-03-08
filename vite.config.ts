@@ -5,6 +5,9 @@ import { resolve } from 'path';
 import manifest from './src/manifest.json';
 
 export default defineConfig({
+  // Root must be 'src' so @crxjs/vite-plugin resolves manifest paths
+  // (content/index.ts, background/index.ts, etc.) relative to src/
+  root: 'src',
   plugins: [
     preact(),
     crx({ manifest }),
@@ -19,16 +22,15 @@ export default defineConfig({
     },
   },
   build: {
-    outDir: 'dist/chrome',
+    // outDir is relative to the new root (src/), so go up one level
+    outDir: '../dist/chrome',
     sourcemap: true,
-    rollupOptions: {
-      input: {
-        popup: resolve(__dirname, 'src/pages/popup/index.html'),
-        options: resolve(__dirname, 'src/pages/options/index.html'),
-      },
-    },
+    // No explicit rollupOptions.input needed — @crxjs picks up HTML pages
+    // from the manifest (default_popup, options_page) automatically.
   },
   test: {
+    // Override test root back to project root so test paths resolve correctly
+    root: resolve(__dirname),
     globals: true,
     environment: 'jsdom',
     setupFiles: ['tests/setup.ts'],

@@ -84,8 +84,8 @@ Content Script (GitHub DOM) <-> Background Service Worker <-> Web Workers (WASM 
 ### Phase 9: Cross-Browser Support
 
 - [x] Add `webextension-polyfill` for API normalization
-- [ ] Create Safari build step using `safari-web-extension-converter`
-- [ ] Verify WASM loading and full extension flow in Safari
+- [x] Create Safari build step using `safari-web-extension-converter`
+- [ ] Verify WASM loading and full extension flow in Safari (requires macOS — deferred to CI/release)
 
 ### Phase 10: Accessibility & Polish
 
@@ -111,3 +111,4 @@ Content Script (GitHub DOM) <-> Background Service Worker <-> Web Workers (WASM 
 - `src/shared/types.ts` contains ~60 named types/interfaces covering: LSP protocol (Position, Range, Location, Hover, SignatureHelp, capabilities, lifecycle), JSON-RPC 2.0 transport, extension messages (discriminated union of 13 message types), worker messages, error codes, settings schema, UI state, popup state, GitHub API types, and cache types.
 - **Phase 4-T1 Research**: TypeScript's Language Service API is JavaScript-based — no WASM compilation needed. It runs directly in a Web Worker via `ts.createLanguageService()` with a custom `LanguageServiceHost` backed by the VFS. The server adapter translates LSP methods to TS API calls: `getQuickInfoAtPosition` (hover), `getDefinitionAtPosition` (definition), `getSignatureHelpItems` (signature help). A minimal lib.d.ts (~300 lines) is embedded to provide essential built-in types (Array, Promise, Map, Set, etc.) without bundling the full 20K-line lib.es5.d.ts. Position conversion between LSP (line/character) and TypeScript (offset) is handled by `positionToOffset`/`offsetToPosition`. The same server adapter handles both TypeScript and JavaScript (via `allowJs`/`checkJs`).
 - **Phase 4-T3 Research**: Go (gopls) has no WASM build — it's a native Go binary with heavy system dependencies. Rust (rust-analyzer) has an experimental WASM build at `github.com/rust-analyzer/rust-analyzer-wasm` (~10MB+). Python has two viable paths: Pyright is TypeScript-based and can run in a Web Worker (see `monaco-pyright-lsp`); Jedi/Pylsp require a Python runtime (possible via Pyodide but heavy). Currently only TypeScript/JavaScript servers are available. Added `server-availability.ts` with `isServerAvailable()`, `getWorkerUrl()`, and `getUnavailableReason()`. The LspRouter now checks availability before spawning workers, returning descriptive error messages for unavailable languages.
+- **Phase 9 Build Fix**: `@crxjs/vite-plugin` resolves manifest paths by joining `config.root` with the path from manifest.json. Since manifest.json is at `src/manifest.json`, we must set `root: 'src'` in vite.config.ts so `content/index.ts` resolves to `src/content/index.ts`. Test root is overridden back to project root via `test.root`. Build output uses `outDir: '../dist/chrome'` (relative to the new root). Also created placeholder PNG icons in `src/icons/` for the manifest icon references.

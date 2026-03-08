@@ -7,6 +7,9 @@
   "scripts": {
     "dev": "vite",
     "build": "tsc --noEmit && vite build",
+    "build:chrome": "tsc --noEmit && vite build",
+    "build:safari": "pnpm build && bash scripts/build-safari.sh",
+    "build:all": "pnpm build && bash scripts/build-safari.sh",
     "preview": "vite preview",
     "test": "vitest run",
     "test:watch": "vitest",
