@@ -52,7 +52,7 @@ Content Script (GitHub DOM) <-> Background Service Worker <-> Web Workers (WASM 
 
 ### Phase 5: Content Script
 
-- [ ] Implement page detector (`src/content/page-detector.ts`): URL pattern matching for blob, PR files, compare views; Turbo navigation detection
+- [x] Implement page detector (`src/content/page-detector.ts`): URL pattern matching for blob, PR files, compare views; Turbo navigation detection
 - [ ] Implement DOM observer (`src/content/dom-observer.ts`): MutationObserver setup on code container, detect line additions/removals
 - [ ] Implement token detector (`src/content/token-detector.ts`): hover debouncing, mouse event handling, position calculation (line + character offset)
 - [ ] Implement messaging layer (`src/content/messaging.ts`): typed message sending to background, response handling, request cancellation
