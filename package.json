@@ -18,7 +18,9 @@
     "lint:fix": "eslint src/ tests/ --fix",
     "typecheck": "tsc --noEmit",
     "format": "prettier --write 'src/**/*.{ts,tsx,css}' 'tests/**/*.{ts,tsx}'",
-    "format:check": "prettier --check 'src/**/*.{ts,tsx,css}' 'tests/**/*.{ts,tsx}'"
+    "format:check": "prettier --check 'src/**/*.{ts,tsx,css}' 'tests/**/*.{ts,tsx}'",
+    "test:e2e": "playwright test",
+    "test:e2e:headed": "playwright test --headed"
   },
   "dependencies": {
     "dompurify": "^3.3.2",
@@ -29,6 +31,7 @@
   "devDependencies": {
     "@crxjs/vite-plugin": "^2.0.0-beta.28",
     "@eslint/js": "^9.17.0",
+    "@playwright/test": "^1.58.2",
     "@preact/preset-vite": "^2.9.0",
     "@types/chrome": "^0.0.287",
     "@types/dompurify": "^3.2.0",

@@ -95,7 +95,7 @@ Content Script (GitHub DOM) <-> Background Service Worker <-> Web Workers (WASM 
 
 ### Phase 11: End-to-End Testing
 
-- [ ] Set up Playwright for browser extension E2E testing
+- [x] Set up Playwright for browser extension E2E testing
 - [ ] Write E2E tests: hover popover, sidebar mode, extension toggle, Turbo navigation, virtualized scroll, PAT authentication
 
 ### Phase 12: CI/CD & Release
