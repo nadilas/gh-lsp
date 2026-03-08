@@ -374,6 +374,7 @@ export interface ExtensionSettings {
   keyboardShortcutSidebar: string;
   keyboardShortcutPinPopover: string;
   enabled: boolean;
+  sidebarSize: number;
 }
 
 /** PAT stored separately in chrome.storage.local for security */

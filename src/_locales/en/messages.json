@@ -1,0 +1,390 @@
+{
+  "extensionName": {
+    "message": "gh-lsp — GitHub Code Intelligence",
+    "description": "The display name of the extension."
+  },
+  "extensionDescription": {
+    "message": "LSP-powered hover type info, go-to-definition, and signature help on GitHub.com code views",
+    "description": "The description of the extension shown in browser stores and extension management."
+  },
+  "cmdToggleExtension": {
+    "message": "Toggle gh-lsp extension on/off",
+    "description": "Description for the keyboard shortcut that toggles the extension."
+  },
+  "cmdToggleSidebar": {
+    "message": "Toggle sidebar panel",
+    "description": "Description for the keyboard shortcut that toggles the sidebar."
+  },
+  "cmdPinPopover": {
+    "message": "Pin current popover",
+    "description": "Description for the keyboard shortcut that pins the popover."
+  },
+  "popupTitle": {
+    "message": "gh-lsp",
+    "description": "Title shown in the popup header."
+  },
+  "msgLoading": {
+    "message": "Loading...",
+    "description": "Loading indicator text."
+  },
+  "msgExtensionDisabled": {
+    "message": "Extension is disabled",
+    "description": "Shown in popup when extension is toggled off."
+  },
+  "msgUnsupportedPage": {
+    "message": "Navigate to a GitHub code page to use gh-lsp",
+    "description": "Shown in popup when the active tab is not a GitHub code page."
+  },
+  "labelLanguage": {
+    "message": "Language",
+    "description": "Label for the detected language row in the popup."
+  },
+  "labelServer": {
+    "message": "Server",
+    "description": "Label for the worker/server status row in the popup."
+  },
+  "labelDisplay": {
+    "message": "Display",
+    "description": "Label for the display mode row in the popup."
+  },
+  "btnSettings": {
+    "message": "Settings",
+    "description": "Text on the button that opens the options page."
+  },
+  "btnRetry": {
+    "message": "Retry",
+    "description": "Text on the retry button shown on error states."
+  },
+  "btnDismiss": {
+    "message": "Dismiss",
+    "description": "Text on the dismiss button shown on error states."
+  },
+  "btnSave": {
+    "message": "Save",
+    "description": "Text on the button that saves the PAT."
+  },
+  "btnValidate": {
+    "message": "Validate",
+    "description": "Text on the button that validates the PAT."
+  },
+  "optionsTitle": {
+    "message": "gh-lsp Settings",
+    "description": "Title of the options/settings page."
+  },
+  "sectionDisplay": {
+    "message": "Display",
+    "description": "Section heading for display settings."
+  },
+  "sectionLanguages": {
+    "message": "Languages",
+    "description": "Section heading for language settings."
+  },
+  "sectionAuthentication": {
+    "message": "Authentication",
+    "description": "Section heading for authentication settings."
+  },
+  "sectionPerformance": {
+    "message": "Performance",
+    "description": "Section heading for performance settings."
+  },
+  "sectionTheme": {
+    "message": "Theme",
+    "description": "Section heading for theme settings."
+  },
+  "sectionAbout": {
+    "message": "About",
+    "description": "Section heading for the about section."
+  },
+  "labelDisplayMode": {
+    "message": "Display Mode",
+    "description": "Label for the display mode setting."
+  },
+  "labelSidebarPosition": {
+    "message": "Sidebar Position",
+    "description": "Label for the sidebar position setting."
+  },
+  "labelGithubPat": {
+    "message": "GitHub Personal Access Token",
+    "description": "Label for the PAT input field."
+  },
+  "labelHoverDebounce": {
+    "message": "Hover Debounce ($MS$ms)",
+    "description": "Label for the hover debounce slider. $MS$ is the current value.",
+    "placeholders": {
+      "ms": {
+        "content": "$1",
+        "example": "300"
+      }
+    }
+  },
+  "labelCacheTtl": {
+    "message": "Cache TTL ($MINUTES$ min)",
+    "description": "Label for the cache TTL slider. $MINUTES$ is the current value.",
+    "placeholders": {
+      "minutes": {
+        "content": "$1",
+        "example": "30"
+      }
+    }
+  },
+  "labelWorkerIdleTimeout": {
+    "message": "Worker Idle Timeout ($MINUTES$ min)",
+    "description": "Label for the worker idle timeout slider. $MINUTES$ is the current value.",
+    "placeholders": {
+      "minutes": {
+        "content": "$1",
+        "example": "5"
+      }
+    }
+  },
+  "labelMaxWorkers": {
+    "message": "Max Workers ($COUNT$)",
+    "description": "Label for the max workers slider. $COUNT$ is the current value.",
+    "placeholders": {
+      "count": {
+        "content": "$1",
+        "example": "4"
+      }
+    }
+  },
+  "labelVersion": {
+    "message": "Version",
+    "description": "Label for the version info in the about section."
+  },
+  "labelSource": {
+    "message": "Source",
+    "description": "Label for the source code link in the about section."
+  },
+  "displayModePopover": {
+    "message": "Popover",
+    "description": "Display mode option: popover."
+  },
+  "displayModeSidebar": {
+    "message": "Sidebar",
+    "description": "Display mode option: sidebar."
+  },
+  "sidebarPositionRight": {
+    "message": "Right",
+    "description": "Sidebar position option."
+  },
+  "sidebarPositionLeft": {
+    "message": "Left",
+    "description": "Sidebar position option."
+  },
+  "sidebarPositionTop": {
+    "message": "Top",
+    "description": "Sidebar position option."
+  },
+  "sidebarPositionBottom": {
+    "message": "Bottom",
+    "description": "Sidebar position option."
+  },
+  "themeAuto": {
+    "message": "Auto (match GitHub)",
+    "description": "Theme option: automatic."
+  },
+  "themeLight": {
+    "message": "Light",
+    "description": "Theme option: light."
+  },
+  "themeDark": {
+    "message": "Dark",
+    "description": "Theme option: dark."
+  },
+  "workerStatusIdle": {
+    "message": "Idle",
+    "description": "Worker status label."
+  },
+  "workerStatusLoading": {
+    "message": "Loading...",
+    "description": "Worker status label."
+  },
+  "workerStatusInitializing": {
+    "message": "Initializing...",
+    "description": "Worker status label."
+  },
+  "workerStatusReady": {
+    "message": "Ready",
+    "description": "Worker status label."
+  },
+  "workerStatusBusy": {
+    "message": "Busy",
+    "description": "Worker status label."
+  },
+  "workerStatusShuttingDown": {
+    "message": "Shutting down...",
+    "description": "Worker status label."
+  },
+  "workerStatusError": {
+    "message": "Error",
+    "description": "Worker status label."
+  },
+  "workerStatusTerminated": {
+    "message": "Terminated",
+    "description": "Worker status label."
+  },
+  "ariaLabelToggleExtension": {
+    "message": "Toggle extension",
+    "description": "ARIA label for the extension toggle checkbox."
+  },
+  "ariaLabelSwitchToSidebarMode": {
+    "message": "Switch to sidebar mode",
+    "description": "ARIA label for the mode toggle button when current mode is popover."
+  },
+  "ariaLabelSwitchToPopoverMode": {
+    "message": "Switch to popover mode",
+    "description": "ARIA label for the mode toggle button when current mode is sidebar."
+  },
+  "ariaLabelOpenSettings": {
+    "message": "Open extension settings",
+    "description": "ARIA label for the settings button in the popup."
+  },
+  "ariaLabelGoToDefinition": {
+    "message": "Go to definition",
+    "description": "ARIA label for the definition link."
+  },
+  "ariaLabelClosePopover": {
+    "message": "Close popover",
+    "description": "ARIA label for the popover close button."
+  },
+  "ariaLabelPinPopover": {
+    "message": "Pin popover",
+    "description": "ARIA label for the popover pin button."
+  },
+  "ariaLabelLoadingTypeInfo": {
+    "message": "Loading type information",
+    "description": "ARIA label for the loading state."
+  },
+  "ariaLabelDismissError": {
+    "message": "Dismiss error",
+    "description": "ARIA label for the error dismiss button."
+  },
+  "ariaLabelRetry": {
+    "message": "Retry",
+    "description": "ARIA label for the retry button."
+  },
+  "ariaLabelCodeIntelligence": {
+    "message": "Code intelligence",
+    "description": "ARIA label for the sidebar container."
+  },
+  "ariaLabelResizeSidebar": {
+    "message": "Resize sidebar",
+    "description": "ARIA label for the sidebar resize handle."
+  },
+  "ariaLabelExpandSidebar": {
+    "message": "Expand sidebar",
+    "description": "ARIA label for the sidebar toggle when collapsed."
+  },
+  "ariaLabelCollapseSidebar": {
+    "message": "Collapse sidebar",
+    "description": "ARIA label for the sidebar toggle when expanded."
+  },
+  "sidebarEmptyMessage": {
+    "message": "Hover over a symbol to see type info",
+    "description": "Placeholder text shown in sidebar when no symbol is hovered."
+  },
+  "codeIntelligenceTitle": {
+    "message": "Code Intelligence",
+    "description": "Default sidebar title when no symbol is selected."
+  },
+  "goToDefinitionLabel": {
+    "message": "Go to Definition",
+    "description": "Text for the go-to-definition link."
+  },
+  "errorFailedLoadStatus": {
+    "message": "Failed to load extension status",
+    "description": "Error shown in popup when initial load fails."
+  },
+  "errorFailedLoadSettings": {
+    "message": "Failed to load settings",
+    "description": "Error shown in options when settings fail to load."
+  },
+  "msgLoadingSettings": {
+    "message": "Loading settings...",
+    "description": "Loading text shown while settings are being fetched."
+  },
+  "msgValidating": {
+    "message": "Validating...",
+    "description": "Button text while PAT validation is in progress."
+  },
+  "errorNoToken": {
+    "message": "No token provided",
+    "description": "Error shown when validate is clicked with empty input."
+  },
+  "msgAuthenticatedAs": {
+    "message": "Authenticated as $USERNAME$",
+    "description": "Success message after PAT validation.",
+    "placeholders": {
+      "username": {
+        "content": "$1",
+        "example": "octocat"
+      }
+    }
+  },
+  "errorAuthFailed": {
+    "message": "Authentication failed ($STATUS$)",
+    "description": "Error when PAT validation returns a non-200 status.",
+    "placeholders": {
+      "status": {
+        "content": "$1",
+        "example": "401"
+      }
+    }
+  },
+  "errorNetworkValidation": {
+    "message": "Network error during validation",
+    "description": "Error when PAT validation fails due to network issues."
+  },
+  "ariaLabelSavePat": {
+    "message": "Save personal access token",
+    "description": "ARIA label for the save PAT button."
+  },
+  "ariaLabelValidatePat": {
+    "message": "Validate personal access token",
+    "description": "ARIA label for the validate PAT button."
+  },
+  "ariaLabelHideToken": {
+    "message": "Hide token",
+    "description": "ARIA label for the hide token button."
+  },
+  "ariaLabelShowToken": {
+    "message": "Show token",
+    "description": "ARIA label for the show token button."
+  },
+  "ariaLabelHoverDebounce": {
+    "message": "Hover debounce",
+    "description": "ARIA label for the hover debounce slider."
+  },
+  "ariaLabelCacheTtl": {
+    "message": "Cache TTL",
+    "description": "ARIA label for the cache TTL slider."
+  },
+  "ariaLabelWorkerIdleTimeout": {
+    "message": "Worker idle timeout",
+    "description": "ARIA label for the worker idle timeout slider."
+  },
+  "ariaLabelMaxWorkers": {
+    "message": "Max concurrent workers",
+    "description": "ARIA label for the max workers slider."
+  },
+  "ariaLabelDisplaySettings": {
+    "message": "Display settings",
+    "description": "ARIA label for the display settings section."
+  },
+  "ariaLabelLanguageSettings": {
+    "message": "Language settings",
+    "description": "ARIA label for the language settings section."
+  },
+  "ariaLabelAuthSettings": {
+    "message": "Authentication settings",
+    "description": "ARIA label for the authentication settings section."
+  },
+  "ariaLabelPerformanceSettings": {
+    "message": "Performance settings",
+    "description": "ARIA label for the performance settings section."
+  },
+  "ariaLabelThemeSettings": {
+    "message": "Theme settings",
+    "description": "ARIA label for the theme settings section."
+  }
+}
