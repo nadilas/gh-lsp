@@ -2,16 +2,25 @@
  * Content script entry point.
  *
  * Orchestrates page detection, DOM observation, token hover detection,
- * and messaging with the background service worker. Handles GitHub's
- * Turbo SPA navigation by tearing down and re-initializing when the
- * URL changes.
+ * messaging with the background service worker, and UI rendering
+ * (popover or sidebar). Handles GitHub's Turbo SPA navigation by
+ * tearing down and re-initializing when the URL changes.
  */
 
+import { h } from 'preact';
 import type {
   RepoContext,
   ExtensionSettings,
   LspHoverResponse,
+  LspHover,
   PageNavigatedMessage,
+  PopoverState,
+  SidebarState,
+  PopoverPosition,
+  HoverDisplayData,
+  ExtensionError,
+  DetectedTheme,
+  SupportedLanguage,
 } from '@shared/types';
 import { getSettings } from '@shared/settings';
 import { LOADING_INDICATOR_DELAY_MS } from '@shared/constants';
@@ -19,6 +28,12 @@ import { detectPage, observeNavigation, refineBlobContext } from './page-detecto
 import { observeCodeDom, findCodeContainers, findCodeLines } from './dom-observer';
 import { createTokenDetector, type TokenHoverEvent } from './token-detector';
 import { ContentMessaging } from './messaging';
+import { ExtensionMount } from '@ui/mount';
+import { Popover } from '@ui/popover/Popover';
+import { Sidebar } from '@ui/sidebar/Sidebar';
+import { calculatePopoverPosition } from '@ui/popover/positioning';
+import { detectTheme, onThemeChange } from '@ui/theme';
+import themeCSS from '@ui/styles/theme.css?inline';
 
 // ─── Content Script State ──────────────────────────────────────────────────
 
@@ -30,8 +45,8 @@ type ContentScriptState = 'dormant' | 'active' | 'disposed';
  *
  * Lifecycle:
  *   1. `initialize()` — detect page, load settings, wire up navigation listener
- *   2. `activate(context)` — start DOM observer, token detector, messaging
- *   3. `deactivate()` — tear down everything, cancel pending requests
+ *   2. `activate(context)` — start DOM observer, token detector, messaging, UI
+ *   3. `deactivate()` — tear down everything, cancel pending requests, destroy UI
  *   4. On Turbo navigation → deactivate → re-detect → maybe re-activate
  */
 export class GhLspContentScript {
@@ -53,6 +68,33 @@ export class GhLspContentScript {
 
   // Track the current in-flight hover request so we can cancel it
   private currentHoverRequestId: string | null = null;
+
+  // ── UI State ─────────────────────────────────────────────────────────────
+
+  /** Shadow DOM mount point for the extension UI */
+  private mount: ExtensionMount | null = null;
+
+  /** Theme change listener cleanup */
+  private stopThemeListener: (() => void) | null = null;
+
+  /** Current detected GitHub theme */
+  private currentTheme: DetectedTheme = 'light';
+
+  // Popover state
+  private popoverState: PopoverState = 'hidden';
+  private popoverPosition: PopoverPosition | null = null;
+  private currentTokenRect: DOMRect | null = null;
+
+  // Sidebar state
+  private sidebarState: SidebarState = 'hidden';
+
+  // Shared display state (used by both popover and sidebar)
+  private hoverData: HoverDisplayData | null = null;
+  private hoverError: ExtensionError | null = null;
+  private isLoadingUI = false;
+
+  // Last hover event — retained for retry
+  private lastHoverEvent: TokenHoverEvent | null = null;
 
   /**
    * Entry point: detect the current page, load settings, set up navigation
@@ -95,7 +137,7 @@ export class GhLspContentScript {
 
   /**
    * Activates the content script for a detected code page. Starts DOM
-   * observation, token hover detection, and notifies the background.
+   * observation, token hover detection, messaging, and creates the UI.
    */
   activate(context: RepoContext): void {
     if (this.state === 'disposed') return;
@@ -118,12 +160,15 @@ export class GhLspContentScript {
 
     // Start token hover detection
     this.startTokenDetector();
+
+    // Create UI (popover or sidebar in shadow DOM)
+    this.createUI();
   }
 
   /**
    * Deactivates the content script: stops observers, cancels pending
-   * requests, and clears all state. The script goes dormant and can
-   * be re-activated on the next navigation.
+   * requests, destroys UI, and clears all state. The script goes dormant
+   * and can be re-activated on the next navigation.
    */
   deactivate(): void {
     if (this.state !== 'active') return;
@@ -150,6 +195,9 @@ export class GhLspContentScript {
 
     // Cancel all pending messaging requests
     this.messaging.cancelAll();
+
+    // Destroy UI
+    this.destroyUI();
 
     this.context = null;
     this.state = 'dormant';
@@ -186,6 +234,279 @@ export class GhLspContentScript {
   /** Returns the current repo context (null when dormant) */
   getContext(): RepoContext | null {
     return this.context;
+  }
+
+  /** Returns the current display mode from settings */
+  getDisplayMode(): string {
+    return this.settings?.displayMode ?? 'popover';
+  }
+
+  /** Returns the current sidebar state */
+  getSidebarState(): SidebarState {
+    return this.sidebarState;
+  }
+
+  /** Returns the current popover state */
+  getPopoverState(): PopoverState {
+    return this.popoverState;
+  }
+
+  /** Returns the current hover display data (if any) */
+  getHoverData(): HoverDisplayData | null {
+    return this.hoverData;
+  }
+
+  // ─── Private: UI Lifecycle ──────────────────────────────────────────────
+
+  /**
+   * Creates the Shadow DOM mount point and initializes the UI layer.
+   * Injects theme CSS and starts theme change detection.
+   */
+  private createUI(): void {
+    if (this.mount) return;
+
+    this.mount = new ExtensionMount();
+    this.mount.create();
+    this.mount.injectStyles(themeCSS);
+
+    // Detect and apply theme
+    this.currentTheme = detectTheme();
+    this.mount.setDataAttribute('theme', this.currentTheme);
+
+    // Watch for theme changes
+    this.stopThemeListener = onThemeChange((theme) => {
+      this.currentTheme = theme;
+      this.mount?.setDataAttribute('theme', theme);
+    });
+
+    // Initialize display mode state
+    const displayMode = this.settings?.displayMode ?? 'popover';
+    if (displayMode === 'sidebar') {
+      this.sidebarState = 'expanded';
+    }
+
+    this.renderUI();
+  }
+
+  /**
+   * Destroys the UI layer, cleaning up theme listeners and the shadow DOM mount.
+   */
+  private destroyUI(): void {
+    if (this.stopThemeListener) {
+      this.stopThemeListener();
+      this.stopThemeListener = null;
+    }
+
+    if (this.mount) {
+      this.mount.destroy();
+      this.mount = null;
+    }
+
+    // Reset UI state
+    this.popoverState = 'hidden';
+    this.popoverPosition = null;
+    this.currentTokenRect = null;
+    this.sidebarState = 'hidden';
+    this.hoverData = null;
+    this.hoverError = null;
+    this.isLoadingUI = false;
+    this.lastHoverEvent = null;
+  }
+
+  /**
+   * Renders the appropriate UI component (Popover or Sidebar) into the
+   * shadow DOM based on the current display mode and state.
+   */
+  private renderUI(): void {
+    if (!this.mount) return;
+
+    const displayMode = this.settings?.displayMode ?? 'popover';
+
+    if (displayMode === 'popover') {
+      this.mount.render(
+        h(Popover, {
+          state: this.popoverState,
+          data: this.hoverData,
+          error: this.hoverError,
+          position: this.popoverPosition,
+          onDismiss: () => this.dismissPopover(),
+          onPin: () => this.pinPopover(),
+          onRetry: () => this.retryHover(),
+        }),
+      );
+    } else {
+      this.mount.render(
+        h(Sidebar, {
+          position: this.settings?.sidebarPosition ?? 'right',
+          state: this.sidebarState,
+          data: this.hoverData,
+          error: this.hoverError,
+          loading: this.isLoadingUI,
+          onToggle: () => this.toggleSidebar(),
+          onRetry: () => this.retryHover(),
+          onDismiss: () => {
+            this.hoverError = null;
+            this.renderUI();
+          },
+          size: this.settings?.sidebarSize,
+          onSizeChange: (size: number) => {
+            if (this.settings) {
+              this.settings.sidebarSize = size;
+            }
+          },
+        }),
+      );
+    }
+  }
+
+  // ─── Private: Popover Controls ──────────────────────────────────────────
+
+  /** Dismisses the popover and clears hover data */
+  private dismissPopover(): void {
+    this.popoverState = 'hidden';
+    this.hoverData = null;
+    this.hoverError = null;
+    this.popoverPosition = null;
+    this.currentTokenRect = null;
+    this.isLoadingUI = false;
+    this.renderUI();
+  }
+
+  /** Toggles popover pin state */
+  private pinPopover(): void {
+    if (this.popoverState === 'visible') {
+      this.popoverState = 'pinned';
+    } else if (this.popoverState === 'pinned') {
+      this.popoverState = 'visible';
+    }
+    this.renderUI();
+  }
+
+  // ─── Private: Sidebar Controls ──────────────────────────────────────────
+
+  /** Toggles sidebar collapse/expand */
+  private toggleSidebar(): void {
+    if (this.sidebarState === 'expanded') {
+      this.sidebarState = 'collapsed';
+    } else if (this.sidebarState === 'collapsed') {
+      this.sidebarState = 'expanded';
+    }
+    this.renderUI();
+  }
+
+  // ─── Private: Hover Retry ──────────────────────────────────────────────
+
+  /** Retries the last hover request */
+  private retryHover(): void {
+    if (this.lastHoverEvent && this.context) {
+      this.handleTokenHover(this.lastHoverEvent);
+    }
+  }
+
+  // ─── Private: Display Mode Switch ──────────────────────────────────────
+
+  /**
+   * Switches the display mode between popover and sidebar without
+   * requiring a page reload. Resets the current UI state and re-renders
+   * in the new mode.
+   */
+  private switchDisplayMode(): void {
+    if (!this.mount) return;
+
+    const displayMode = this.settings?.displayMode ?? 'popover';
+
+    // Reset state for the mode we're leaving
+    this.popoverState = 'hidden';
+    this.popoverPosition = null;
+    this.currentTokenRect = null;
+    this.hoverData = null;
+    this.hoverError = null;
+    this.isLoadingUI = false;
+
+    // Initialize state for the mode we're entering
+    if (displayMode === 'sidebar') {
+      this.sidebarState = 'expanded';
+    } else {
+      this.sidebarState = 'hidden';
+    }
+
+    this.renderUI();
+  }
+
+  // ─── Private: Popover Positioning ──────────────────────────────────────
+
+  /**
+   * Gets a DOMRect for the hovered token element, used for popover positioning.
+   * Tries to use `elementFromPoint` for the actual token element, falling back
+   * to the line element's bounding rect.
+   */
+  private getTokenRect(event: TokenHoverEvent): DOMRect {
+    try {
+      const element = document.elementFromPoint(event.clientX, event.clientY);
+      if (element && element !== document.documentElement && element !== document.body) {
+        return element.getBoundingClientRect();
+      }
+    } catch {
+      // elementFromPoint may not be available in some environments
+    }
+    // Fallback: use the line element
+    return event.lineElement.getBoundingClientRect();
+  }
+
+  /**
+   * Calculates the popover position from the stored token rect.
+   */
+  private calculatePosition(): PopoverPosition | null {
+    if (!this.currentTokenRect) return null;
+
+    const estimatedWidth = 400;
+    const estimatedHeight = 200;
+
+    return calculatePopoverPosition({
+      tokenRect: this.currentTokenRect,
+      popoverWidth: estimatedWidth,
+      popoverHeight: estimatedHeight,
+      viewportWidth: window.innerWidth,
+      viewportHeight: window.innerHeight,
+      scrollY: window.scrollY,
+      stickyHeaderHeight: 0,
+    });
+  }
+
+  // ─── Private: Hover Data Conversion ────────────────────────────────────
+
+  /**
+   * Converts an LSP hover result into the HoverDisplayData format
+   * expected by the UI components.
+   *
+   * Parses markdown hover content to separate the code signature
+   * (from code blocks) from documentation text.
+   */
+  private convertHoverToDisplayData(
+    hover: LspHover,
+    language: SupportedLanguage,
+  ): HoverDisplayData {
+    const value = hover.contents.value;
+    let signature = value;
+    let documentation: string | undefined;
+
+    if (hover.contents.kind === 'markdown') {
+      // Extract the first code block as the type signature
+      const codeBlockRegex = /^```\w*\n([\s\S]*?)\n```/m;
+      const match = value.match(codeBlockRegex);
+      if (match) {
+        signature = match[1]?.trim() ?? value;
+        const endOfBlock = (match.index ?? 0) + match[0].length;
+        const rest = value.slice(endOfBlock).trim();
+        if (rest) documentation = rest;
+      }
+    }
+
+    return {
+      signature,
+      language,
+      documentation,
+    };
   }
 
   // ─── Private: Setup Helpers ──────────────────────────────────────────────
@@ -235,11 +556,10 @@ export class GhLspContentScript {
           this.handleExtensionToggle(message.enabled);
         },
         onRateLimitWarning: (_message) => {
-          // Future: display rate limit warning in UI (Phase 6+)
           console.warn('[gh-lsp] Rate limit warning received');
         },
         onWorkerStatus: (_message) => {
-          // Future: update status indicator in UI (Phase 6+)
+          // Future: update status indicator in UI
         },
       });
     }
@@ -286,14 +606,19 @@ export class GhLspContentScript {
       this.startTokenDetector();
     }
 
-    // If display mode changed, the UI layer will handle the switch (Phase 6+)
-    // For now just log
-    if (changes.displayMode !== undefined) {
+    // If display mode changed, switch the UI
+    if (changes.displayMode !== undefined && this.state === 'active') {
       console.debug('[gh-lsp] Display mode changed to:', changes.displayMode);
+      this.switchDisplayMode();
     }
 
-    // If enabled languages changed, nothing to do here — the background
-    // handles language filtering when routing requests
+    // If sidebar position or size changed, re-render
+    if (
+      (changes.sidebarPosition !== undefined || changes.sidebarSize !== undefined) &&
+      this.state === 'active'
+    ) {
+      this.renderUI();
+    }
   }
 
   /**
@@ -360,13 +685,24 @@ export class GhLspContentScript {
 
   /**
    * Called when the user hovers over a code token long enough for the
-   * debounce to fire. Sends a hover request to the background.
+   * debounce to fire. Sends a hover request to the background and
+   * updates the UI with loading state.
    */
   private handleTokenHover(event: TokenHoverEvent): void {
     if (this.state !== 'active' || !this.context) return;
 
     // Cancel any previous in-flight hover
     this.cancelCurrentHover();
+
+    // Store the event for retry
+    this.lastHoverEvent = event;
+
+    // Calculate token rect for popover positioning
+    const displayMode = this.settings?.displayMode ?? 'popover';
+    if (displayMode === 'popover') {
+      this.currentTokenRect = this.getTokenRect(event);
+      this.popoverPosition = this.calculatePosition();
+    }
 
     // Start loading indicator timer
     this.startLoadingTimer();
@@ -377,13 +713,7 @@ export class GhLspContentScript {
       event.position,
     );
 
-    // Track the request ID for cancellation.
-    // The ContentMessaging class generates the requestId internally,
-    // so we get it by inspecting the pending count before/after, but
-    // a simpler approach: since sendHoverRequest returns a promise,
-    // we track the promise completion.
-    //
-    // We use a generation counter to detect stale responses.
+    // Track request generation for staleness detection
     const hoverGeneration = Symbol();
     (this as unknown as Record<symbol, symbol>)[hoverGeneration] = hoverGeneration;
     this.currentHoverRequestId = hoverGeneration.toString();
@@ -394,7 +724,7 @@ export class GhLspContentScript {
         if (this.state !== 'active') return;
 
         this.clearLoadingTimer();
-        this.handleHoverResponse(response, event);
+        this.handleHoverResponse(response);
       })
       .catch((error: unknown) => {
         this.clearLoadingTimer();
@@ -407,40 +737,97 @@ export class GhLspContentScript {
         // Timeout or other error
         if (error instanceof Error && error.message.includes('timed out')) {
           console.warn('[gh-lsp] Hover request timed out');
-          // Future: show timeout indicator in UI (Phase 6+)
+          this.showError({
+            code: 'lsp_timeout',
+            message: 'Request timed out',
+          });
           return;
         }
 
         console.error('[gh-lsp] Hover request failed:', error);
-        // Future: show error state in UI (Phase 6+)
+        this.showError({
+          code: 'lsp_server_error',
+          message: error instanceof Error ? error.message : 'An error occurred',
+        });
       });
   }
 
   /**
    * Called when the mouse leaves a code token. Cancels any in-flight
-   * hover request and hides the popover/indicator.
+   * hover request and hides the loading indicator.
+   *
+   * For popover mode: the popover stays visible so the user can
+   * interact with it. It dismisses itself via its own mouse leave
+   * handler, scroll listener, or escape key.
+   *
+   * For sidebar mode: the data stays in the sidebar until the next hover.
    */
   private handleTokenLeave(): void {
     this.cancelCurrentHover();
     this.clearLoadingTimer();
-    // Future: trigger popover dismiss with fade-out (Phase 6+)
+
+    // Clear loading state in UI if still loading
+    if (this.isLoadingUI) {
+      this.isLoadingUI = false;
+      const displayMode = this.settings?.displayMode ?? 'popover';
+      if (displayMode === 'popover' && this.popoverState === 'loading') {
+        this.popoverState = 'hidden';
+      }
+      this.renderUI();
+    }
   }
 
   /**
-   * Processes a successful hover response from the background.
+   * Processes a successful hover response from the background and
+   * displays the result in the UI.
    */
-  private handleHoverResponse(
-    response: LspHoverResponse,
-    _event: TokenHoverEvent,
-  ): void {
+  private handleHoverResponse(response: LspHoverResponse): void {
     if (!response.result) {
-      // No hover info at this position — nothing to display
+      // No hover info at this position — hide loading state
+      const displayMode = this.settings?.displayMode ?? 'popover';
+      if (displayMode === 'popover') {
+        this.popoverState = 'hidden';
+      }
+      this.isLoadingUI = false;
+      this.renderUI();
       return;
     }
 
-    // Future: render hover data in popover or sidebar (Phase 6+)
-    // For now, log the result for debugging
-    console.debug('[gh-lsp] Hover result:', response.result.contents.value);
+    // Convert LSP result to display data
+    const language = this.context?.language ?? 'typescript';
+    const displayData = this.convertHoverToDisplayData(response.result, language);
+
+    this.hoverData = displayData;
+    this.hoverError = null;
+    this.isLoadingUI = false;
+
+    const displayMode = this.settings?.displayMode ?? 'popover';
+    if (displayMode === 'popover') {
+      this.popoverState = 'visible';
+      // Recalculate position in case viewport changed
+      if (this.currentTokenRect) {
+        this.popoverPosition = this.calculatePosition();
+      }
+    }
+
+    console.debug('[gh-lsp] Hover result:', displayData.signature);
+    this.renderUI();
+  }
+
+  /**
+   * Shows an error state in the UI.
+   */
+  private showError(error: ExtensionError): void {
+    this.hoverData = null;
+    this.hoverError = error;
+    this.isLoadingUI = false;
+
+    const displayMode = this.settings?.displayMode ?? 'popover';
+    if (displayMode === 'popover') {
+      this.popoverState = 'error';
+    }
+
+    this.renderUI();
   }
 
   // ─── Private: Request Management ─────────────────────────────────────────
@@ -466,7 +853,14 @@ export class GhLspContentScript {
     this.clearLoadingTimer();
     this.loadingTimer = setTimeout(() => {
       this.loadingTimer = null;
-      // Future: show loading skeleton in popover (Phase 6+)
+      this.isLoadingUI = true;
+
+      const displayMode = this.settings?.displayMode ?? 'popover';
+      if (displayMode === 'popover') {
+        this.popoverState = 'loading';
+      }
+
+      this.renderUI();
     }, LOADING_INDICATOR_DELAY_MS);
   }
 

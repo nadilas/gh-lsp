@@ -1,5 +1,50 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+
+// ─── Mock UI modules (must be before imports that use them) ─────────────────
+
+vi.mock('../../../src/ui/mount', () => ({
+  ExtensionMount: vi.fn().mockImplementation(() => ({
+    create: vi.fn(() => ({})),
+    injectStyles: vi.fn(),
+    render: vi.fn(),
+    destroy: vi.fn(),
+    setDataAttribute: vi.fn(),
+    getShadowRoot: vi.fn(() => null),
+    getContainer: vi.fn(() => null),
+    getHostElement: vi.fn(() => null),
+    isActive: vi.fn(() => true),
+  })),
+}));
+
+vi.mock('../../../src/ui/popover/Popover', () => ({
+  Popover: vi.fn(() => null),
+}));
+
+vi.mock('../../../src/ui/sidebar/Sidebar', () => ({
+  Sidebar: vi.fn(() => null),
+}));
+
+vi.mock('../../../src/ui/popover/positioning', () => ({
+  calculatePopoverPosition: vi.fn(() => ({
+    top: 100,
+    left: 200,
+    placement: 'below' as const,
+  })),
+}));
+
+vi.mock('../../../src/ui/theme', () => ({
+  detectTheme: vi.fn(() => 'light' as const),
+  onThemeChange: vi.fn(() => () => {}),
+}));
+
+vi.mock('../../../src/ui/styles/theme.css?inline', () => ({
+  default: '',
+}));
+
+// ─── Imports ────────────────────────────────────────────────────────────────
+
 import { GhLspContentScript } from '../../../src/content/index';
+import { ExtensionMount } from '../../../src/ui/mount';
 import type {
   ExtensionSettings,
   LspHoverResponse,
@@ -87,6 +132,21 @@ function createCodeLine(lineNumber: number): HTMLElement {
   return row;
 }
 
+// ─── Helper: get the latest ExtensionMount mock instance ────────────────────
+
+function getLatestMountInstance() {
+  const MockedMount = vi.mocked(ExtensionMount);
+  const results = MockedMount.mock.results;
+  if (results.length === 0) return null;
+  return results[results.length - 1]?.value as {
+    create: ReturnType<typeof vi.fn>;
+    injectStyles: ReturnType<typeof vi.fn>;
+    render: ReturnType<typeof vi.fn>;
+    destroy: ReturnType<typeof vi.fn>;
+    setDataAttribute: ReturnType<typeof vi.fn>;
+  } | null;
+}
+
 // ─── Tests ───────────────────────────────────────────────────────────────────
 
 describe('GhLspContentScript', () => {
@@ -96,12 +156,15 @@ describe('GhLspContentScript', () => {
     vi.useFakeTimers();
     document.body.innerHTML = '';
     setupChromeMock();
+    vi.mocked(ExtensionMount).mockClear();
   });
 
   afterEach(() => {
     script?.dispose();
     vi.useRealTimers();
-    vi.restoreAllMocks();
+    // Use clearAllMocks (not restoreAllMocks) to preserve vi.mock implementations
+    // while clearing call history/results for the next test
+    vi.clearAllMocks();
   });
 
   // ── Initialization ─────────────────────────────────────────────────────
@@ -656,6 +719,329 @@ describe('GhLspContentScript', () => {
 
       // Should still be active
       expect(script.getState()).toBe('active');
+    });
+  });
+
+  // ── UI Integration ────────────────────────────────────────────────────
+
+  describe('UI integration', () => {
+    it('creates ExtensionMount on activation', async () => {
+      setLocationTo('https://github.com/owner/repo/blob/main/src/index.ts');
+      script = new GhLspContentScript();
+
+      await script.initialize();
+
+      expect(ExtensionMount).toHaveBeenCalled();
+      const mountInstance = getLatestMountInstance();
+      expect(mountInstance).not.toBeNull();
+      expect(mountInstance!.create).toHaveBeenCalled();
+      expect(mountInstance!.injectStyles).toHaveBeenCalled();
+      expect(mountInstance!.setDataAttribute).toHaveBeenCalledWith('theme', 'light');
+      expect(mountInstance!.render).toHaveBeenCalled();
+    });
+
+    it('destroys ExtensionMount on deactivation', async () => {
+      setLocationTo('https://github.com/owner/repo/blob/main/src/index.ts');
+      script = new GhLspContentScript();
+      await script.initialize();
+
+      const mountInstance = getLatestMountInstance();
+
+      script.deactivate();
+
+      expect(mountInstance!.destroy).toHaveBeenCalled();
+    });
+
+    it('does not create mount on non-code page', async () => {
+      setLocationTo('https://github.com/owner/repo/issues');
+      script = new GhLspContentScript();
+
+      await script.initialize();
+
+      expect(ExtensionMount).not.toHaveBeenCalled();
+    });
+
+    it('uses popover mode by default', async () => {
+      setLocationTo('https://github.com/owner/repo/blob/main/src/index.ts');
+      script = new GhLspContentScript();
+      await script.initialize();
+
+      expect(script.getDisplayMode()).toBe('popover');
+      expect(script.getPopoverState()).toBe('hidden');
+    });
+
+    it('uses sidebar mode when configured', async () => {
+      setupChromeMock({ displayMode: 'sidebar' });
+      setLocationTo('https://github.com/owner/repo/blob/main/src/index.ts');
+      script = new GhLspContentScript();
+      await script.initialize();
+
+      expect(script.getDisplayMode()).toBe('sidebar');
+      expect(script.getSidebarState()).toBe('expanded');
+    });
+
+    it('switches display mode on settings change', async () => {
+      setLocationTo('https://github.com/owner/repo/blob/main/src/index.ts');
+      script = new GhLspContentScript();
+      await script.initialize();
+
+      expect(script.getDisplayMode()).toBe('popover');
+
+      // Switch to sidebar
+      const settingsMessage: SettingsChangedMessage = {
+        type: 'settings/changed',
+        changes: { displayMode: 'sidebar' },
+      };
+
+      for (const listener of messageListeners) {
+        listener(settingsMessage, {} as chrome.runtime.MessageSender, vi.fn());
+      }
+
+      expect(script.getDisplayMode()).toBe('sidebar');
+      expect(script.getSidebarState()).toBe('expanded');
+    });
+
+    it('renders hover data in popover mode', async () => {
+      setLocationTo('https://github.com/owner/repo/blob/main/src/index.ts');
+      script = new GhLspContentScript();
+
+      const hoverResponse: LspHoverResponse = {
+        type: 'lsp/response',
+        requestId: 'test-id',
+        kind: 'hover',
+        result: {
+          contents: {
+            kind: 'markdown',
+            value: '```ts\nconst x: number\n```\nA numeric variable.',
+          },
+        },
+      };
+      sendMessageMock.mockResolvedValue(hoverResponse);
+
+      await script.initialize();
+
+      // Trigger hover
+      const container = createCodeContainer();
+      const line = createCodeLine(5);
+      container.appendChild(line);
+
+      const codeContent = line.querySelector('.react-file-line')!;
+      const moveEvent = new MouseEvent('mousemove', {
+        clientX: 100,
+        clientY: 50,
+        bubbles: true,
+      });
+      Object.defineProperty(moveEvent, 'target', { value: codeContent });
+      document.dispatchEvent(moveEvent);
+
+      // Wait for debounce
+      vi.advanceTimersByTime(350);
+
+      // Flush microtasks for the hover response
+      await vi.advanceTimersByTimeAsync(0);
+
+      expect(script.getPopoverState()).toBe('visible');
+      expect(script.getHoverData()).toEqual({
+        signature: 'const x: number',
+        language: 'typescript',
+        documentation: 'A numeric variable.',
+      });
+    });
+
+    it('renders hover data in sidebar mode', async () => {
+      setupChromeMock({ displayMode: 'sidebar' });
+      setLocationTo('https://github.com/owner/repo/blob/main/src/index.ts');
+      script = new GhLspContentScript();
+
+      const hoverResponse: LspHoverResponse = {
+        type: 'lsp/response',
+        requestId: 'test-id',
+        kind: 'hover',
+        result: {
+          contents: {
+            kind: 'markdown',
+            value: '```ts\nfunction greet(): void\n```\nGreets the user.',
+          },
+        },
+      };
+      sendMessageMock.mockResolvedValue(hoverResponse);
+
+      await script.initialize();
+
+      expect(script.getSidebarState()).toBe('expanded');
+
+      // Trigger hover
+      const container = createCodeContainer();
+      const line = createCodeLine(3);
+      container.appendChild(line);
+
+      const codeContent = line.querySelector('.react-file-line')!;
+      const moveEvent = new MouseEvent('mousemove', {
+        clientX: 100,
+        clientY: 50,
+        bubbles: true,
+      });
+      Object.defineProperty(moveEvent, 'target', { value: codeContent });
+      document.dispatchEvent(moveEvent);
+
+      vi.advanceTimersByTime(350);
+      await vi.advanceTimersByTimeAsync(0);
+
+      expect(script.getSidebarState()).toBe('expanded');
+      expect(script.getHoverData()).toEqual({
+        signature: 'function greet(): void',
+        language: 'typescript',
+        documentation: 'Greets the user.',
+      });
+    });
+
+    it('shows loading state after delay', async () => {
+      setLocationTo('https://github.com/owner/repo/blob/main/src/index.ts');
+      script = new GhLspContentScript();
+
+      // Make sendMessage hang (never resolve)
+      sendMessageMock.mockImplementation((msg: { type: string }) => {
+        if (msg.type === 'lsp/hover') {
+          return new Promise(() => {}); // Never resolves
+        }
+        return Promise.resolve(undefined);
+      });
+
+      await script.initialize();
+
+      const container = createCodeContainer();
+      const line = createCodeLine(5);
+      container.appendChild(line);
+
+      const codeContent = line.querySelector('.react-file-line')!;
+      const moveEvent = new MouseEvent('mousemove', {
+        clientX: 100,
+        clientY: 50,
+        bubbles: true,
+      });
+      Object.defineProperty(moveEvent, 'target', { value: codeContent });
+      document.dispatchEvent(moveEvent);
+
+      // Wait for debounce (300ms)
+      vi.advanceTimersByTime(350);
+
+      // Before loading delay (200ms), should still be hidden
+      expect(script.getPopoverState()).toBe('hidden');
+
+      // After loading delay, should show loading
+      vi.advanceTimersByTime(250);
+      expect(script.getPopoverState()).toBe('loading');
+    });
+
+    it('resets UI state on deactivation', async () => {
+      setupChromeMock({ displayMode: 'sidebar' });
+      setLocationTo('https://github.com/owner/repo/blob/main/src/index.ts');
+      script = new GhLspContentScript();
+      await script.initialize();
+
+      expect(script.getSidebarState()).toBe('expanded');
+
+      script.deactivate();
+
+      expect(script.getSidebarState()).toBe('hidden');
+      expect(script.getPopoverState()).toBe('hidden');
+      expect(script.getHoverData()).toBeNull();
+    });
+
+    it('switches from sidebar to popover mode', async () => {
+      setupChromeMock({ displayMode: 'sidebar' });
+      setLocationTo('https://github.com/owner/repo/blob/main/src/index.ts');
+      script = new GhLspContentScript();
+      await script.initialize();
+
+      expect(script.getSidebarState()).toBe('expanded');
+      expect(script.getDisplayMode()).toBe('sidebar');
+
+      // Switch to popover mode
+      const settingsMessage: SettingsChangedMessage = {
+        type: 'settings/changed',
+        changes: { displayMode: 'popover' },
+      };
+
+      for (const listener of messageListeners) {
+        listener(settingsMessage, {} as chrome.runtime.MessageSender, vi.fn());
+      }
+
+      expect(script.getDisplayMode()).toBe('popover');
+      expect(script.getSidebarState()).toBe('hidden');
+      expect(script.getPopoverState()).toBe('hidden');
+    });
+
+    it('handles null hover result gracefully', async () => {
+      setLocationTo('https://github.com/owner/repo/blob/main/src/index.ts');
+      script = new GhLspContentScript();
+
+      const hoverResponse: LspHoverResponse = {
+        type: 'lsp/response',
+        requestId: 'test-id',
+        kind: 'hover',
+        result: null,
+      };
+      sendMessageMock.mockResolvedValue(hoverResponse);
+
+      await script.initialize();
+
+      const container = createCodeContainer();
+      const line = createCodeLine(5);
+      container.appendChild(line);
+
+      const codeContent = line.querySelector('.react-file-line')!;
+      const moveEvent = new MouseEvent('mousemove', {
+        clientX: 100,
+        clientY: 50,
+        bubbles: true,
+      });
+      Object.defineProperty(moveEvent, 'target', { value: codeContent });
+      document.dispatchEvent(moveEvent);
+
+      vi.advanceTimersByTime(350);
+      await vi.advanceTimersByTimeAsync(0);
+
+      // Null result means no info — popover stays hidden
+      expect(script.getPopoverState()).toBe('hidden');
+      expect(script.getHoverData()).toBeNull();
+    });
+
+    it('parses plaintext hover content', async () => {
+      setLocationTo('https://github.com/owner/repo/blob/main/src/index.ts');
+      script = new GhLspContentScript();
+
+      const hoverResponse: LspHoverResponse = {
+        type: 'lsp/response',
+        requestId: 'test-id',
+        kind: 'hover',
+        result: {
+          contents: { kind: 'plaintext', value: 'const x: number' },
+        },
+      };
+      sendMessageMock.mockResolvedValue(hoverResponse);
+
+      await script.initialize();
+
+      const container = createCodeContainer();
+      const line = createCodeLine(5);
+      container.appendChild(line);
+
+      const codeContent = line.querySelector('.react-file-line')!;
+      const moveEvent = new MouseEvent('mousemove', {
+        clientX: 100,
+        clientY: 50,
+        bubbles: true,
+      });
+      Object.defineProperty(moveEvent, 'target', { value: codeContent });
+      document.dispatchEvent(moveEvent);
+
+      vi.advanceTimersByTime(350);
+      await vi.advanceTimersByTimeAsync(0);
+
+      expect(script.getPopoverState()).toBe('visible');
+      expect(script.getHoverData()?.signature).toBe('const x: number');
+      expect(script.getHoverData()?.documentation).toBeUndefined();
     });
   });
 });
