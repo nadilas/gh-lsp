@@ -1,5 +1,6 @@
 import type { FunctionComponent } from 'preact';
 import type { ExtensionError } from '../../shared/types';
+import { t } from '../../shared/i18n';
 
 export interface ErrorStateProps {
   /** The error to display */
@@ -28,18 +29,18 @@ export const ErrorState: FunctionComponent<ErrorStateProps> = ({
           class="gh-lsp-popover__retry-btn"
           onClick={onRetry}
           type="button"
-          aria-label="Retry"
+          aria-label={t('ariaLabelRetry', 'Retry')}
         >
-          Retry
+          {t('btnRetry', 'Retry')}
         </button>
       )}
       <button
         class="gh-lsp-popover__dismiss-btn"
         onClick={onDismiss}
         type="button"
-        aria-label="Dismiss error"
+        aria-label={t('ariaLabelDismissError', 'Dismiss error')}
       >
-        Dismiss
+        {t('btnDismiss', 'Dismiss')}
       </button>
     </div>
   </div>

@@ -12,18 +12,19 @@ import { getSettings, saveSettings } from '../../shared/settings';
 import { isExtensionMessage } from '../../shared/messages';
 import { detectPage } from '../../content/page-detector';
 import browser, { type Storage } from '../../shared/browser';
+import { t } from '../../shared/i18n';
 
 // ─── Status Indicators ──────────────────────────────────────────────────────
 
 const WORKER_STATUS_LABELS: Record<WorkerStatus, string> = {
-  idle: 'Idle',
-  loading: 'Loading...',
-  initializing: 'Initializing...',
-  ready: 'Ready',
-  busy: 'Busy',
-  shutting_down: 'Shutting down...',
-  error: 'Error',
-  terminated: 'Terminated',
+  idle: t('workerStatusIdle', 'Idle'),
+  loading: t('workerStatusLoading', 'Loading...'),
+  initializing: t('workerStatusInitializing', 'Initializing...'),
+  ready: t('workerStatusReady', 'Ready'),
+  busy: t('workerStatusBusy', 'Busy'),
+  shutting_down: t('workerStatusShuttingDown', 'Shutting down...'),
+  error: t('workerStatusError', 'Error'),
+  terminated: t('workerStatusTerminated', 'Terminated'),
 };
 
 const WORKER_STATUS_COLORS: Record<WorkerStatus, string> = {
@@ -98,7 +99,7 @@ export const Popup: FunctionComponent<PopupProps> = ({
         });
       } catch (err) {
         if (cancelled) return;
-        setLoadError('Failed to load extension status');
+        setLoadError(t('errorFailedLoadStatus', 'Failed to load extension status'));
         console.error('[gh-lsp] Popup load error:', err);
       }
     }
@@ -184,7 +185,7 @@ export const Popup: FunctionComponent<PopupProps> = ({
     return (
       <div class="gh-lsp-popup" role="alert">
         <div class="gh-lsp-popup__header">
-          <span class="gh-lsp-popup__title">gh-lsp</span>
+          <span class="gh-lsp-popup__title">{t('popupTitle', 'gh-lsp')}</span>
         </div>
         <div class="gh-lsp-popup__body">
           <p class="gh-lsp-popup__error">{loadError}</p>
@@ -197,10 +198,10 @@ export const Popup: FunctionComponent<PopupProps> = ({
     return (
       <div class="gh-lsp-popup">
         <div class="gh-lsp-popup__header">
-          <span class="gh-lsp-popup__title">gh-lsp</span>
+          <span class="gh-lsp-popup__title">{t('popupTitle', 'gh-lsp')}</span>
         </div>
         <div class="gh-lsp-popup__body">
-          <p class="gh-lsp-popup__loading">Loading...</p>
+          <p class="gh-lsp-popup__loading">{t('msgLoading', 'Loading...')}</p>
         </div>
       </div>
     );
@@ -209,13 +210,13 @@ export const Popup: FunctionComponent<PopupProps> = ({
   return (
     <div class="gh-lsp-popup">
       <div class="gh-lsp-popup__header">
-        <span class="gh-lsp-popup__title">gh-lsp</span>
+        <span class="gh-lsp-popup__title">{t('popupTitle', 'gh-lsp')}</span>
         <label class="gh-lsp-popup__toggle">
           <input
             type="checkbox"
             checked={status.extensionEnabled}
             onChange={handleToggleEnabled}
-            aria-label="Toggle extension"
+            aria-label={t('ariaLabelToggleExtension', 'Toggle extension')}
           />
           <span class="gh-lsp-popup__toggle-slider" />
         </label>
@@ -223,16 +224,16 @@ export const Popup: FunctionComponent<PopupProps> = ({
 
       <div class="gh-lsp-popup__body">
         {!status.extensionEnabled ? (
-          <p class="gh-lsp-popup__disabled-message">Extension is disabled</p>
+          <p class="gh-lsp-popup__disabled-message">{t('msgExtensionDisabled', 'Extension is disabled')}</p>
         ) : !status.isOnSupportedPage ? (
           <p class="gh-lsp-popup__unsupported-message">
-            Navigate to a GitHub code page to use gh-lsp
+            {t('msgUnsupportedPage', 'Navigate to a GitHub code page to use gh-lsp')}
           </p>
         ) : (
           <div class="gh-lsp-popup__status">
             {status.detectedLanguage && (
               <div class="gh-lsp-popup__row">
-                <span class="gh-lsp-popup__label">Language</span>
+                <span class="gh-lsp-popup__label">{t('labelLanguage', 'Language')}</span>
                 <span class="gh-lsp-popup__value">
                   {LANGUAGE_LABELS[status.detectedLanguage]}
                 </span>
@@ -241,7 +242,7 @@ export const Popup: FunctionComponent<PopupProps> = ({
 
             {status.workerStatus && (
               <div class="gh-lsp-popup__row">
-                <span class="gh-lsp-popup__label">Server</span>
+                <span class="gh-lsp-popup__label">{t('labelServer', 'Server')}</span>
                 <span class="gh-lsp-popup__value">
                   <span
                     class="gh-lsp-popup__status-dot"
@@ -253,14 +254,14 @@ export const Popup: FunctionComponent<PopupProps> = ({
             )}
 
             <div class="gh-lsp-popup__row">
-              <span class="gh-lsp-popup__label">Display</span>
+              <span class="gh-lsp-popup__label">{t('labelDisplay', 'Display')}</span>
               <button
                 type="button"
                 class="gh-lsp-popup__mode-btn"
                 onClick={handleToggleDisplayMode}
                 aria-label={`Switch to ${status.displayMode === 'popover' ? 'sidebar' : 'popover'} mode`}
               >
-                {status.displayMode === 'popover' ? 'Popover' : 'Sidebar'}
+                {status.displayMode === 'popover' ? t('displayModePopover', 'Popover') : t('displayModeSidebar', 'Sidebar')}
               </button>
             </div>
           </div>
@@ -272,9 +273,9 @@ export const Popup: FunctionComponent<PopupProps> = ({
           type="button"
           class="gh-lsp-popup__options-btn"
           onClick={handleOpenOptions}
-          aria-label="Open extension settings"
+          aria-label={t('ariaLabelOpenSettings', 'Open extension settings')}
         >
-          Settings
+          {t('btnSettings', 'Settings')}
         </button>
       </div>
     </div>

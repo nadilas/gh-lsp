@@ -1,5 +1,6 @@
 import { type FunctionComponent } from 'preact';
 import { useEffect, useRef, useCallback, useState } from 'preact/hooks';
+import { t } from '../../shared/i18n';
 import type {
   PopoverState,
   PopoverPosition,
@@ -251,7 +252,7 @@ export const Popover: FunctionComponent<PopoverProps> = ({
         <button
           class="gh-lsp-popover__close-btn"
           onClick={onDismiss}
-          aria-label="Close popover"
+          aria-label={t('ariaLabelClosePopover', 'Close popover')}
           type="button"
         >
           ×
@@ -262,7 +263,7 @@ export const Popover: FunctionComponent<PopoverProps> = ({
         <button
           class="gh-lsp-popover__pin-btn"
           onClick={onPin}
-          aria-label="Pin popover"
+          aria-label={t('ariaLabelPinPopover', 'Pin popover')}
           type="button"
           title="Pin popover"
         >

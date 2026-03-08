@@ -1,5 +1,6 @@
 import { type FunctionComponent } from 'preact';
 import { useEffect, useRef, useCallback, useState } from 'preact/hooks';
+import { t } from '../../shared/i18n';
 import type {
   SidebarState,
   SidebarPosition,
@@ -245,7 +246,7 @@ export const Sidebar: FunctionComponent<SidebarProps> = ({
       class={`gh-lsp-sidebar gh-lsp-sidebar--${position}`}
       style={containerStyle}
       role="complementary"
-      aria-label="Code intelligence"
+      aria-label={t('ariaLabelCodeIntelligence', 'Code intelligence')}
       data-state={state}
       data-position={position}
     >
@@ -260,7 +261,8 @@ export const Sidebar: FunctionComponent<SidebarProps> = ({
           aria-orientation={isHorizontalPosition(position) ? 'vertical' : 'horizontal'}
           aria-valuenow={effectiveSize}
           aria-valuemin={SIDEBAR_MIN_SIZE_PX}
-          aria-label="Resize sidebar"
+          aria-valuemax={getMaxSize(position)}
+          aria-label={t('ariaLabelResizeSidebar', 'Resize sidebar')}
           tabIndex={0}
         />
       )}
@@ -271,14 +273,14 @@ export const Sidebar: FunctionComponent<SidebarProps> = ({
           class="gh-lsp-sidebar__toggle-btn"
           onClick={onToggle}
           type="button"
-          aria-label={state === 'collapsed' ? 'Expand sidebar' : 'Collapse sidebar'}
+          aria-label={state === 'collapsed' ? t('ariaLabelExpandSidebar', 'Expand sidebar') : t('ariaLabelCollapseSidebar', 'Collapse sidebar')}
           title={state === 'collapsed' ? 'Expand' : 'Collapse'}
         >
           {getToggleArrow()}
         </button>
         {state === 'expanded' && (
           <span class="gh-lsp-sidebar__title">
-            {data ? (data.signature.split('(')[0] ?? '').trim() : 'Code Intelligence'}
+            {data ? (data.signature.split('(')[0] ?? '').trim() : t('codeIntelligenceTitle', 'Code Intelligence')}
           </span>
         )}
       </div>
@@ -290,7 +292,7 @@ export const Sidebar: FunctionComponent<SidebarProps> = ({
 
           {!loading && !data && !error && (
             <div class="gh-lsp-sidebar__empty">
-              Hover over a symbol to see type info
+              {t('sidebarEmptyMessage', 'Hover over a symbol to see type info')}
             </div>
           )}
 

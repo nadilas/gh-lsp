@@ -1,5 +1,6 @@
 import type { FunctionComponent } from 'preact';
 import type { LspLocation } from '../../shared/types';
+import { t } from '../../shared/i18n';
 
 export interface DefinitionLinkProps {
   /** The LSP location of the definition */
@@ -68,9 +69,9 @@ export const DefinitionLink: FunctionComponent<DefinitionLinkProps> = ({
         href={href}
         target="_blank"
         rel="noopener noreferrer"
-        aria-label="Go to definition"
+        aria-label={t('ariaLabelGoToDefinition', 'Go to definition')}
       >
-        Go to Definition
+        {t('goToDefinitionLabel', 'Go to Definition')}
       </a>
       {declarationSource && (
         <span class="gh-lsp-popover__declaration-source">
