@@ -91,7 +91,7 @@ Content Script (GitHub DOM) <-> Background Service Worker <-> Web Workers (WASM 
 
 - [x] Add ARIA attributes to popover and sidebar
 - [x] Ensure keyboard focusability for all interactive elements
-- [ ] Implement `prefers-reduced-motion` respect and `chrome.i18n` support
+- [x] Implement `prefers-reduced-motion` respect and `chrome.i18n` support
 
 ### Phase 11: End-to-End Testing
 

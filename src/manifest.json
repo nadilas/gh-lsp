@@ -1,7 +1,8 @@
 {
   "manifest_version": 3,
-  "name": "gh-lsp — GitHub Code Intelligence",
-  "description": "LSP-powered hover type info, go-to-definition, and signature help on GitHub.com code views",
+  "name": "__MSG_extensionName__",
+  "description": "__MSG_extensionDescription__",
+  "default_locale": "en",
   "version": "0.1.0",
   "icons": {
     "16": "icons/icon-16.png",
