@@ -17,6 +17,10 @@ function setupChromeMock(): void {
     storage: {
       sync: { get: vi.fn(), set: vi.fn() },
       local: { get: vi.fn(), set: vi.fn() },
+      onChanged: {
+        addListener: vi.fn(),
+        removeListener: vi.fn(),
+      },
     },
   };
   vi.stubGlobal('chrome', chromeMock);
@@ -595,5 +599,40 @@ describe('Options', () => {
       'Theme settings',
       'About',
     ]);
+  });
+
+  // ─── Storage sync ──────────────────────────────────────────────────────
+
+  it('registers chrome.storage.onChanged listener', async () => {
+    container = await renderOptions();
+    expect(chrome.storage.onChanged.addListener).toHaveBeenCalledOnce();
+  });
+
+  it('updates settings when storage changes externally', async () => {
+    container = await renderOptions({}, { displayMode: 'popover' });
+
+    // Get the storage change listener
+    const storageListener = vi.mocked(chrome.storage.onChanged.addListener)
+      .mock.calls[0][0] as (
+        changes: Record<string, chrome.storage.StorageChange>,
+        areaName: string,
+      ) => void;
+
+    // Simulate external settings change (e.g., from popup)
+    storageListener(
+      {
+        'gh-lsp-settings': {
+          newValue: createSettings({ displayMode: 'sidebar' }),
+        },
+      },
+      'sync',
+    );
+
+    await vi.waitFor(() => {
+      const sidebarRadio = container.querySelector(
+        'input[name="displayMode"][value="sidebar"]',
+      ) as HTMLInputElement;
+      expect(sidebarRadio.checked).toBe(true);
+    });
   });
 });

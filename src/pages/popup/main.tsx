@@ -108,26 +108,10 @@ export const Popup: FunctionComponent<PopupProps> = ({
     };
   }, [queryActiveTab]);
 
-  // Listen for settings changes and worker status updates
+  // Listen for worker status updates via runtime messaging
   useEffect(() => {
     const listener = (message: unknown): void => {
       if (!isExtensionMessage(message)) return;
-
-      if (message.type === 'settings/changed') {
-        setSettings((prev) => (prev ? { ...prev, ...message.changes } : prev));
-        if (message.changes.enabled !== undefined) {
-          setStatus((prev) => ({
-            ...prev,
-            extensionEnabled: message.changes.enabled!,
-          }));
-        }
-        if (message.changes.displayMode !== undefined) {
-          setStatus((prev) => ({
-            ...prev,
-            displayMode: message.changes.displayMode!,
-          }));
-        }
-      }
 
       if (message.type === 'worker/status') {
         setStatus((prev) => ({
@@ -140,6 +124,32 @@ export const Popup: FunctionComponent<PopupProps> = ({
     chrome.runtime.onMessage.addListener(listener);
     return () => {
       chrome.runtime.onMessage.removeListener(listener);
+    };
+  }, []);
+
+  // Listen for settings changes via chrome.storage.onChanged
+  useEffect(() => {
+    const storageListener = (
+      changes: Record<string, chrome.storage.StorageChange>,
+      areaName: string,
+    ): void => {
+      if (areaName !== 'sync') return;
+
+      const settingsChange = changes['gh-lsp-settings'];
+      if (!settingsChange?.newValue) return;
+
+      const newSettings = settingsChange.newValue as ExtensionSettings;
+      setSettings(newSettings);
+      setStatus((prev) => ({
+        ...prev,
+        extensionEnabled: newSettings.enabled,
+        displayMode: newSettings.displayMode,
+      }));
+    };
+
+    chrome.storage.onChanged.addListener(storageListener);
+    return () => {
+      chrome.storage.onChanged.removeListener(storageListener);
     };
   }, []);
 

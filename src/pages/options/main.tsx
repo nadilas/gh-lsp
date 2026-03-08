@@ -98,6 +98,26 @@ export const Options: FunctionComponent<OptionsProps> = ({ fetchFn }) => {
     };
   }, []);
 
+  // Listen for settings changes from other sources via chrome.storage.onChanged
+  useEffect(() => {
+    const storageListener = (
+      changes: Record<string, chrome.storage.StorageChange>,
+      areaName: string,
+    ): void => {
+      if (areaName !== 'sync') return;
+
+      const settingsChange = changes['gh-lsp-settings'];
+      if (!settingsChange?.newValue) return;
+
+      setSettings(settingsChange.newValue as ExtensionSettings);
+    };
+
+    chrome.storage.onChanged.addListener(storageListener);
+    return () => {
+      chrome.storage.onChanged.removeListener(storageListener);
+    };
+  }, []);
+
   // ─── Auto-save helper ──────────────────────────────────────────────────
 
   const updateSetting = useCallback(

@@ -35,6 +35,10 @@ function setupChromeMock(): void {
     storage: {
       sync: { get: vi.fn(), set: vi.fn() },
       local: { get: vi.fn(), set: vi.fn() },
+      onChanged: {
+        addListener: vi.fn(),
+        removeListener: vi.fn(),
+      },
     },
   };
 
@@ -454,5 +458,66 @@ describe('Popup', () => {
 
     const rows = container.querySelectorAll('.gh-lsp-popup__row');
     expect(rows.length).toBe(0);
+  });
+
+  // ─── Storage sync ───────────────────────────────────────────────────────
+
+  it('registers chrome.storage.onChanged listener', async () => {
+    container = await renderPopup();
+    expect(chrome.storage.onChanged.addListener).toHaveBeenCalledOnce();
+  });
+
+  it('updates UI when settings change via storage', async () => {
+    container = await renderPopup({}, { enabled: true, displayMode: 'popover' });
+
+    // Get the storage change listener
+    const storageListener = vi.mocked(chrome.storage.onChanged.addListener)
+      .mock.calls[0][0] as (
+        changes: Record<string, chrome.storage.StorageChange>,
+        areaName: string,
+      ) => void;
+
+    // Simulate settings change from options page
+    storageListener(
+      {
+        'gh-lsp-settings': {
+          newValue: {
+            ...createSettings({ enabled: false, displayMode: 'sidebar' }),
+          },
+        },
+      },
+      'sync',
+    );
+
+    await vi.waitFor(() => {
+      const disabledMsg = container.querySelector('.gh-lsp-popup__disabled-message');
+      if (!disabledMsg) throw new Error('Should show disabled message');
+    });
+  });
+
+  it('ignores storage changes from non-sync area', async () => {
+    container = await renderPopup({}, { enabled: true });
+
+    const storageListener = vi.mocked(chrome.storage.onChanged.addListener)
+      .mock.calls[0][0] as (
+        changes: Record<string, chrome.storage.StorageChange>,
+        areaName: string,
+      ) => void;
+
+    // Simulate local storage change (should be ignored)
+    storageListener(
+      {
+        'gh-lsp-settings': {
+          newValue: { ...createSettings({ enabled: false }) },
+        },
+      },
+      'local',
+    );
+
+    // Toggle should still show enabled
+    const toggle = container.querySelector(
+      '.gh-lsp-popup__toggle input',
+    ) as HTMLInputElement;
+    expect(toggle.checked).toBe(true);
   });
 });
