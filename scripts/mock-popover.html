@@ -1,0 +1,255 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>gh-lsp Popover Preview</title>
+<style>
+  /* Simulate a GitHub-like code background */
+  :root {
+    --ghlsp-bg: #ffffff;
+    --ghlsp-text: #1f2328;
+    --ghlsp-text-secondary: #656d76;
+    --ghlsp-border: #d0d7de;
+    --ghlsp-code-bg: #f6f8fa;
+    --ghlsp-code-text: #1f2328;
+    --ghlsp-link: #0969da;
+    --ghlsp-link-hover: #0550ae;
+    --ghlsp-button-bg: #f6f8fa;
+    --ghlsp-button-bg-hover: #eaeef2;
+    --ghlsp-button-border: #d0d7de;
+    --ghlsp-shadow-lg: rgba(31, 35, 40, 0.2);
+    --ghlsp-param-name: #0550ae;
+    --ghlsp-param-type: #8250df;
+    --ghlsp-keyword: #cf222e;
+    --ghlsp-font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Noto Sans', Helvetica, Arial, sans-serif;
+    --ghlsp-font-mono: ui-monospace, SFMono-Regular, 'SF Mono', Menlo, Consolas, 'Liberation Mono', monospace;
+    --ghlsp-font-size: 13px;
+    --ghlsp-font-size-small: 12px;
+    --ghlsp-line-height: 1.5;
+    --ghlsp-padding: 12px;
+    --ghlsp-padding-compact: 8px;
+    --ghlsp-border-radius: 6px;
+    --ghlsp-transition-fast: 150ms ease;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background: #f6f8fa;
+    display: flex;
+    align-items: flex-start;
+    justify-content: center;
+    padding: 32px 24px;
+    font-family: var(--ghlsp-font-family);
+  }
+
+  /* Mock GitHub code lines behind the popover */
+  .mock-github {
+    position: relative;
+    width: 700px;
+  }
+
+  .mock-code {
+    background: #ffffff;
+    border: 1px solid var(--ghlsp-border);
+    border-radius: 6px;
+    font-family: var(--ghlsp-font-mono);
+    font-size: 13px;
+    line-height: 20px;
+    overflow: hidden;
+  }
+
+  .mock-code-line {
+    display: flex;
+    border-bottom: 1px solid #f0f0f0;
+  }
+
+  .mock-code-line:last-child { border-bottom: none; }
+
+  .mock-line-num {
+    width: 50px;
+    text-align: right;
+    padding: 0 8px;
+    color: #8b949e;
+    background: #f6f8fa;
+    user-select: none;
+    border-right: 1px solid #f0f0f0;
+    flex-shrink: 0;
+  }
+
+  .mock-line-content {
+    padding: 0 12px;
+    white-space: pre;
+    flex: 1;
+  }
+
+  .mock-line-content .kw { color: #cf222e; }
+  .mock-line-content .fn { color: #8250df; }
+  .mock-line-content .ty { color: #0550ae; }
+  .mock-line-content .str { color: #0a3069; }
+  .mock-line-content .cm { color: #6e7781; }
+
+  .highlight-token {
+    background: #ddf4ff;
+    border-bottom: 2px solid #0969da;
+    cursor: pointer;
+  }
+
+  /* Popover — same styles as the real extension */
+  .gh-lsp-popover {
+    position: absolute;
+    top: 108px;
+    left: 90px;
+    background: var(--ghlsp-bg);
+    color: var(--ghlsp-text);
+    font-family: var(--ghlsp-font-family);
+    font-size: var(--ghlsp-font-size);
+    line-height: var(--ghlsp-line-height);
+    border: 1px solid var(--ghlsp-border);
+    border-radius: var(--ghlsp-border-radius);
+    box-shadow: 0 4px 12px var(--ghlsp-shadow-lg);
+    max-width: 560px;
+    min-width: 200px;
+    z-index: 10;
+  }
+
+  .gh-lsp-popover__content { padding: var(--ghlsp-padding); }
+
+  .gh-lsp-popover__hover-content {
+    display: flex;
+    flex-direction: column;
+    gap: var(--ghlsp-padding-compact);
+  }
+
+  .gh-lsp-popover__signature {
+    background: var(--ghlsp-code-bg);
+    color: var(--ghlsp-code-text);
+    font-family: var(--ghlsp-font-mono);
+    font-size: var(--ghlsp-font-size-small);
+    padding: var(--ghlsp-padding-compact);
+    border-radius: calc(var(--ghlsp-border-radius) - 2px);
+    overflow-x: auto;
+    white-space: pre;
+    margin: 0;
+  }
+
+  .gh-lsp-popover__documentation { color: var(--ghlsp-text); }
+
+  .gh-lsp-popover__documentation p { margin: 4px 0; }
+
+  .gh-lsp-popover__documentation code {
+    background: var(--ghlsp-code-bg);
+    padding: 1px 4px;
+    border-radius: 3px;
+    font-family: var(--ghlsp-font-mono);
+    font-size: 0.92em;
+  }
+
+  .gh-lsp-popover__parameters {
+    border-top: 1px solid var(--ghlsp-border);
+    padding-top: var(--ghlsp-padding-compact);
+  }
+
+  .gh-lsp-popover__param {
+    display: flex;
+    gap: 8px;
+    align-items: baseline;
+    padding: 2px 0;
+  }
+
+  .gh-lsp-popover__param-name {
+    color: var(--ghlsp-param-name);
+    font-family: var(--ghlsp-font-mono);
+    font-weight: 600;
+    font-size: var(--ghlsp-font-size-small);
+  }
+
+  .gh-lsp-popover__param-type {
+    color: var(--ghlsp-param-type);
+    font-family: var(--ghlsp-font-mono);
+    font-size: var(--ghlsp-font-size-small);
+  }
+
+  .gh-lsp-popover__param-doc {
+    color: var(--ghlsp-text-secondary);
+    font-size: var(--ghlsp-font-size-small);
+  }
+
+  .gh-lsp-popover__definition {
+    border-top: 1px solid var(--ghlsp-border);
+    padding-top: var(--ghlsp-padding-compact);
+  }
+
+  .gh-lsp-popover__definition-link {
+    color: var(--ghlsp-link);
+    text-decoration: none;
+    font-size: var(--ghlsp-font-size-small);
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+  }
+
+  .gh-lsp-popover__declaration-source {
+    color: var(--ghlsp-text-secondary);
+    font-size: var(--ghlsp-font-size-small);
+  }
+
+  .gh-lsp-popover__pin-btn {
+    position: absolute;
+    top: 4px;
+    right: 4px;
+    background: var(--ghlsp-button-bg);
+    color: var(--ghlsp-text);
+    border: 1px solid var(--ghlsp-button-border);
+    border-radius: var(--ghlsp-border-radius);
+    padding: 2px 6px;
+    cursor: pointer;
+    font-size: var(--ghlsp-font-size-small);
+    line-height: 1;
+  }
+</style>
+</head>
+<body>
+  <div class="mock-github">
+    <!-- Simulated GitHub code view -->
+    <div class="mock-code">
+      <div class="mock-code-line"><span class="mock-line-num">1</span><span class="mock-line-content"><span class="kw">import</span> { createApp } <span class="kw">from</span> <span class="str">'./framework'</span>;</span></div>
+      <div class="mock-code-line"><span class="mock-line-num">2</span><span class="mock-line-content"></span></div>
+      <div class="mock-code-line"><span class="mock-line-num">3</span><span class="mock-line-content"><span class="cm">/** Formats a user's display name with optional greeting. */</span></span></div>
+      <div class="mock-code-line"><span class="mock-line-num">4</span><span class="mock-line-content"><span class="kw">export function</span> <span class="fn">formatUser</span>(name: <span class="ty">string</span>, locale?: <span class="ty">string</span>): <span class="ty">string</span> {</span></div>
+      <div class="mock-code-line"><span class="mock-line-num">5</span><span class="mock-line-content">  <span class="kw">return</span> <span class="str">`Hello, ${name}!`</span>;</span></div>
+      <div class="mock-code-line"><span class="mock-line-num">6</span><span class="mock-line-content">}</span></div>
+      <div class="mock-code-line"><span class="mock-line-num">7</span><span class="mock-line-content"></span></div>
+      <div class="mock-code-line"><span class="mock-line-num">8</span><span class="mock-line-content"><span class="kw">const</span> app = <span class="highlight-token"><span class="fn">createApp</span></span>({ debug: <span class="kw">true</span> });</span></div>
+      <div class="mock-code-line"><span class="mock-line-num">9</span><span class="mock-line-content">app.use(<span class="fn">formatUser</span>(<span class="str">"World"</span>));</span></div>
+    </div>
+
+    <!-- Popover appearing on hover of "createApp" at line 8 -->
+    <div class="gh-lsp-popover" role="tooltip">
+      <div class="gh-lsp-popover__content">
+        <div class="gh-lsp-popover__hover-content">
+          <pre class="gh-lsp-popover__signature"><code class="language-typescript"><span class="kw">function</span> <span class="fn">createApp</span>(config: <span class="ty">AppConfig</span>): <span class="ty">Application</span></code></pre>
+
+          <div class="gh-lsp-popover__documentation">
+            <p>Creates and initializes a new application instance with the given configuration.</p>
+            <p>Returns a fully configured <code>Application</code> ready to register plugins and start serving.</p>
+          </div>
+
+          <div class="gh-lsp-popover__parameters">
+            <div class="gh-lsp-popover__param">
+              <span class="gh-lsp-popover__param-name">config</span>
+              <span class="gh-lsp-popover__param-type">: AppConfig</span>
+              <span class="gh-lsp-popover__param-doc">&mdash; Application configuration options</span>
+            </div>
+          </div>
+
+          <div class="gh-lsp-popover__definition">
+            <a class="gh-lsp-popover__definition-link" href="#">Go to Definition</a>
+            <span class="gh-lsp-popover__declaration-source"> in src/framework.ts</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</body>
+</html>
