@@ -263,6 +263,35 @@ describe('createGoServer', () => {
       expect(result!.contents.value).toContain('name string');
     });
 
+    it('hover resolves identifier defined in another VFS file', async () => {
+      const OTHER_URI = 'gh-lsp://owner/repo/main/src/utils.go';
+      const utilsCode = [
+        'package main',
+        '',
+        '// Helper returns a help string.',
+        'func Helper() string { return "help" }',
+      ].join('\n');
+      const mainCode = [
+        'package main',
+        '',
+        'func main() {',
+        '    Helper()',
+        '}',
+      ].join('\n');
+
+      openDocument(server, OTHER_URI, utilsCode);
+      openDocument(server, GO_URI, mainCode);
+
+      // Hover on "Helper" call in main.go — line 3, character 4
+      const result = (await server.handleRequest(
+        'textDocument/hover',
+        makeHoverParams(GO_URI, 3, 4),
+      )) as { contents: { kind: string; value: string } } | null;
+      expect(result).not.toBeNull();
+      expect(result!.contents.value).toContain('func Helper() string');
+      expect(result!.contents.value).toContain('Helper returns a help string.');
+    });
+
     it('hover on short var declaration shows assignment', async () => {
       const code = [
         'package main',
