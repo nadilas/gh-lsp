@@ -247,6 +247,24 @@ describe('parseRustDeclarations', () => {
     expect(decls[0]!.kind).toBe('function');
     expect(decls[0]!.name).toBe('dangerous');
   });
+
+  it('parses const fn as function not const', () => {
+    const code = 'pub const fn compute(x: u32) -> u32 {';
+    const decls = parseRustDeclarations(code, TEST_URI);
+    expect(decls).toHaveLength(1);
+    expect(decls[0]!.kind).toBe('function');
+    expect(decls[0]!.name).toBe('compute');
+    expect(decls[0]!.signature).toContain('const fn compute');
+  });
+
+  it('preserves doc comments through #[derive] attributes', () => {
+    const code = '/// A 2D point.\n#[derive(Debug, Clone)]\npub struct Point {\n  x: f64,\n}';
+    const decls = parseRustDeclarations(code, TEST_URI);
+    const structDecl = decls.find((d) => d.kind === 'struct');
+    expect(structDecl).toBeDefined();
+    expect(structDecl!.name).toBe('Point');
+    expect(structDecl!.documentation).toContain('A 2D point.');
+  });
 });
 
 // ─── Server Lifecycle Tests ──────────────────────────────────────────────────
@@ -613,6 +631,31 @@ describe('createRustServer', () => {
 
       expect(result).not.toBeNull();
       expect(result!.contents.value).toContain('struct Point');
+    });
+
+    it('prefers struct declaration over impl block for hover', async () => {
+      await server.initialize({});
+
+      const code = 'pub struct Point {\n  x: f64,\n}\nimpl Point {\n  fn new() -> Self { todo!() }\n}\nfn main() {\n  let p: Point = todo!();\n}';
+
+      server.handleNotification('textDocument/didOpen', {
+        textDocument: {
+          uri: TEST_URI,
+          languageId: 'rust',
+          version: 1,
+          text: code,
+        },
+      });
+
+      // Hover over "Point" on line 7 (the reference)
+      const result = (await server.handleRequest(
+        'textDocument/hover',
+        makeHoverParams(TEST_URI, 7, 9),
+      )) as { contents: { kind: string; value: string } } | null;
+
+      expect(result).not.toBeNull();
+      expect(result!.contents.value).toContain('struct Point');
+      expect(result!.contents.value).not.toContain('impl');
     });
   });
 
