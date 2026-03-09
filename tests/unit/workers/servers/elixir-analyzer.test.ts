@@ -366,6 +366,33 @@ alias Some.Module`;
       expect(analysis.modules).toHaveLength(1);
     });
   });
+
+  describe('@doc false handling', () => {
+    it('sets function doc to null when @doc false is used', () => {
+      const source = `defmodule MyApp do
+  @doc false
+  def internal(x) do
+    x
+  end
+end`;
+      const analysis = analyzeElixirSource(source);
+      const func = analysis.modules[0]!.functions[0]!;
+      expect(func.doc).toBeNull();
+    });
+  });
+
+  describe('defdelegate parsing', () => {
+    it('parses defdelegate as public', () => {
+      const source = `defmodule MyApp do
+  defdelegate count(list), to: Enum
+end`;
+      const analysis = analyzeElixirSource(source);
+      const func = analysis.modules[0]!.functions[0]!;
+      expect(func.name).toBe('count');
+      expect(func.kind).toBe('defdelegate');
+      expect(func.visibility).toBe('public');
+    });
+  });
 });
 
 // ─── Hover Info ──────────────────────────────────────────────────────────────
@@ -430,6 +457,25 @@ end`;
     const hover = getHoverInfoAt(analysis, source, 0, 0);
     // 'defmodule' is not a module or function name
     expect(hover).toBeNull();
+  });
+
+  it('returns hover info for a qualified function call (Module.func)', () => {
+    const source = `defmodule Utils do
+  def helper(x) do
+    x + 1
+  end
+end
+
+defmodule MyApp do
+  def run do
+    Utils.helper(42)
+  end
+end`;
+    const analysis = analyzeElixirSource(source);
+    // Cursor on "helper" in "Utils.helper(42)" at line 8
+    const hover = getHoverInfoAt(analysis, source, 8, 11);
+    expect(hover).not.toBeNull();
+    expect(hover!.contents.value).toContain('helper');
   });
 
   it('returns hover info for a type', () => {
@@ -567,6 +613,26 @@ end`;
     const analysis = analyzeElixirSource(source);
     const sig = getSignatureHelpAt(analysis, source, 2, 5);
     expect(sig).toBeNull();
+  });
+
+  it('returns signature help for a qualified function call (Module.func)', () => {
+    const source = `defmodule Utils do
+  def add(a, b) do
+    a + b
+  end
+end
+
+defmodule MyApp do
+  def run do
+    Utils.add(1, 2)
+  end
+end`;
+    const analysis = analyzeElixirSource(source);
+    // Cursor after "Utils.add(" at line 8, character 14 (just inside the parens)
+    const sig = getSignatureHelpAt(analysis, source, 8, 14);
+    expect(sig).not.toBeNull();
+    expect(sig!.signatures[0]!.label).toContain('add');
+    expect(sig!.signatures[0]!.parameters).toHaveLength(2);
   });
 
   it('includes documentation in signature help', () => {
