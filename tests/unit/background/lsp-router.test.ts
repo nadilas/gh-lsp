@@ -238,13 +238,11 @@ describe('LspRouter', () => {
   });
 
   describe('unavailable server', () => {
-    it('returns error for Go files (no WASM server available)', async () => {
+    it('routes Go files to Go worker (now available via tree-sitter)', async () => {
       const request = createHoverRequest({ filePath: 'main.go' });
       const result = await router.handleRequest(request);
 
-      expect(result.type).toBe('lsp/error');
-      expect((result as LspErrorResponse).error.code).toBe('unsupported_language');
-      expect((result as LspErrorResponse).error.message).toContain('gopls');
+      expect(result.type).toBe('lsp/response');
     });
 
     it('returns error for Rust files (no WASM server available)', async () => {
@@ -266,7 +264,7 @@ describe('LspRouter', () => {
     });
 
     it('does not attempt to create worker for unavailable server', async () => {
-      const request = createHoverRequest({ filePath: 'main.go' });
+      const request = createHoverRequest({ filePath: 'main.rs' });
       await router.handleRequest(request);
 
       expect(workerPool.getOrCreateWorker).not.toHaveBeenCalled();
