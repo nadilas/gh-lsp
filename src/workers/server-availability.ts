@@ -29,6 +29,7 @@ import type { SupportedLanguage } from '../shared/types';
 const AVAILABLE_SERVERS: ReadonlySet<SupportedLanguage> = new Set([
   'typescript',
   'javascript',
+  'elixir',
 ]);
 
 /**
@@ -51,6 +52,8 @@ export function getWorkerUrl(language: SupportedLanguage): string | null {
     case 'typescript':
     case 'javascript':
       return 'workers/ts-worker.js';
+    case 'elixir':
+      return 'workers/elixir-worker.js';
     case 'go':
     case 'rust':
     case 'python':

@@ -44,6 +44,7 @@ const LANGUAGE_LABELS: Record<SupportedLanguage, string> = {
   go: 'Go',
   rust: 'Rust',
   python: 'Python',
+  elixir: 'Elixir',
 };
 
 // ─── Popup Component ─────────────────────────────────────────────────────────

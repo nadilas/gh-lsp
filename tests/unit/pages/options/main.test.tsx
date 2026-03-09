@@ -247,7 +247,7 @@ describe('Options', () => {
     const checkboxes = container.querySelectorAll(
       '.gh-lsp-options__checkbox-label',
     );
-    expect(checkboxes.length).toBe(5);
+    expect(checkboxes.length).toBe(6);
 
     const labels = Array.from(checkboxes).map((cb) => cb.textContent?.trim());
     expect(labels).toEqual([
@@ -256,6 +256,7 @@ describe('Options', () => {
       'Go',
       'Rust',
       'Python',
+      'Elixir',
     ]);
   });
 
@@ -281,12 +282,13 @@ describe('Options', () => {
       '.gh-lsp-options__checkbox-label input',
     ) as NodeListOf<HTMLInputElement>;
 
-    // TS and JS checked, Go, Rust, Python unchecked
+    // TS and JS checked, Go, Rust, Python, Elixir unchecked
     expect(checkboxes[0]!.checked).toBe(true); // TypeScript
     expect(checkboxes[1]!.checked).toBe(true); // JavaScript
     expect(checkboxes[2]!.checked).toBe(false); // Go
     expect(checkboxes[3]!.checked).toBe(false); // Rust
     expect(checkboxes[4]!.checked).toBe(false); // Python
+    expect(checkboxes[5]!.checked).toBe(false); // Elixir
   });
 
   it('saves language toggle', async () => {
@@ -300,7 +302,7 @@ describe('Options', () => {
 
     await vi.waitFor(() => {
       expect(mockSaveSettings).toHaveBeenCalledWith({
-        enabledLanguages: ['javascript', 'go', 'rust', 'python'],
+        enabledLanguages: ['javascript', 'go', 'rust', 'python', 'elixir'],
       });
     });
   });
