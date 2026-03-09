@@ -369,6 +369,59 @@ describe('createGoServer', () => {
       // Should point to line 2 where `type Point struct` is declared
       expect(result[0]!.range.start.line).toBe(2);
     });
+
+    it('go-to-definition on struct field access finds field declaration', async () => {
+      const code = [
+        'package main',
+        '',
+        'type User struct {',
+        '    Name string',
+        '    Age  int',
+        '}',
+        '',
+        'func main() {',
+        '    u := User{Name: "Alice", Age: 30}',
+        '    _ = u.Name',
+        '}',
+      ].join('\n');
+      openDocument(server, GO_URI, code);
+      // Click on "Name" field access in `u.Name` — line 9, character 10
+      const result = (await server.handleRequest(
+        'textDocument/definition',
+        makeDefinitionParams(GO_URI, 9, 10),
+      )) as { uri: string; range: { start: { line: number } } }[];
+      expect(result).toHaveLength(1);
+      expect(result[0]!.uri).toBe(GO_URI);
+      expect(result[0]!.range.start.line).toBe(3); // Name field in struct
+    });
+
+    it('go-to-definition finds declaration in another VFS file', async () => {
+      const OTHER_URI = 'gh-lsp://owner/repo/main/src/utils.go';
+      const utilsCode = [
+        'package main',
+        '',
+        'func Helper() string { return "help" }',
+      ].join('\n');
+      const mainCode = [
+        'package main',
+        '',
+        'func main() {',
+        '    Helper()',
+        '}',
+      ].join('\n');
+
+      openDocument(server, OTHER_URI, utilsCode);
+      openDocument(server, GO_URI, mainCode);
+
+      // Click on "Helper" call — line 3, character 4
+      const result = (await server.handleRequest(
+        'textDocument/definition',
+        makeDefinitionParams(GO_URI, 3, 4),
+      )) as { uri: string; range: { start: { line: number } } }[];
+      expect(result).toHaveLength(1);
+      expect(result[0]!.uri).toBe(OTHER_URI);
+      expect(result[0]!.range.start.line).toBe(2); // func Helper in utils.go
+    });
   });
 
   // ─── Unknown methods ─────────────────────────────────────────────────
