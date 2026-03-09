@@ -104,6 +104,15 @@ Content Script (GitHub DOM) <-> Background Service Worker <-> Web Workers (WASM 
 - [x] Create `.github/workflows/release.yml`: build Chrome .zip + Safari project on tag push
 - [x] Final manual testing and Chrome Web Store submission preparation
 
+### Phase 13: Rust Language Server Support
+
+- [x] Create `src/workers/servers/rust-server.ts`
+- [x] Create `src/workers/rust-worker.ts`
+- [ ] Update `src/workers/server-availability.ts` (in progress)
+- [ ] Register Rust in `src/shared/languages.ts`
+- [ ] Add Rust tests in `tests/unit/`
+- [ ] Update LSP router for Rust language detection
+
 ## Learnings
 
 - `jsdom` was missing as a devDependency despite being configured as the vitest test environment. Added in Phase 0 completion.

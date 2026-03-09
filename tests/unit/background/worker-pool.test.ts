@@ -220,7 +220,7 @@ describe('WorkerPool', () => {
     it('cleans up and re-throws when LSP initialize fails', async () => {
       // Override the factory to create a worker that rejects initialize
       const failFactory = createMockWorkerFactory();
-      const failPool = new WorkerPool(2, 60_000, failFactory.factory);
+      void new WorkerPool(2, 60_000, failFactory.factory);
 
       // Override postMessage to NOT auto-respond (simulate a timeout or error)
       failFactory.factory = () => {
