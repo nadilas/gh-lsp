@@ -19,8 +19,8 @@ describe('isServerAvailable', () => {
     expect(isServerAvailable('go')).toBe(true);
   });
 
-  it('returns false for rust', () => {
-    expect(isServerAvailable('rust')).toBe(false);
+  it('returns true for rust', () => {
+    expect(isServerAvailable('rust')).toBe(true);
   });
 
   it('returns false for python', () => {
@@ -45,8 +45,8 @@ describe('getWorkerUrl', () => {
     expect(getWorkerUrl('go')).toBe('workers/go-worker.js');
   });
 
-  it('returns null for rust', () => {
-    expect(getWorkerUrl('rust')).toBeNull();
+  it('returns rust-worker.js for rust', () => {
+    expect(getWorkerUrl('rust')).toBe('workers/rust-worker.js');
   });
 
   it('returns null for python', () => {
@@ -72,8 +72,15 @@ describe('getUnavailableReason', () => {
   });
 
   it('returns generic reason for unavailable languages', () => {
-    const unavailableLanguages: SupportedLanguage[] = [
+    const allLanguages: SupportedLanguage[] = [
+      'go',
+      'typescript',
+      'javascript',
+      'elixir',
       'rust',
+    ];
+
+    const unavailableLanguages: SupportedLanguage[] = [
       'python',
     ];
     for (const lang of unavailableLanguages) {

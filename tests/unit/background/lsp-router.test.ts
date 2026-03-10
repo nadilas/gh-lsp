@@ -245,13 +245,11 @@ describe('LspRouter', () => {
       expect(result.type).toBe('lsp/response');
     });
 
-    it('returns error for Rust files (no WASM server available)', async () => {
+    it('does not return error for Rust files (server is available)', async () => {
       const request = createHoverRequest({ filePath: 'main.rs' });
       const result = await router.handleRequest(request);
 
-      expect(result.type).toBe('lsp/error');
-      expect((result as LspErrorResponse).error.code).toBe('unsupported_language');
-      expect((result as LspErrorResponse).error.message).toContain('rust-analyzer');
+      expect(result.type).toBe('lsp/response');
     });
 
     it('returns error for Python files (no WASM server available)', async () => {
