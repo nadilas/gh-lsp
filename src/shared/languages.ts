@@ -11,6 +11,10 @@ const FILE_EXTENSION_MAP: FileExtensionMap = {
   '.rs': 'rust',
   '.py': 'python',
   '.pyi': 'python',
+  '.ex': 'elixir',
+  '.exs': 'elixir',
+  '.heex': 'elixir',
+  '.leex': 'elixir',
 };
 
 const SUPPORTED_LANGUAGES: ReadonlySet<string> = new Set<SupportedLanguage>([
@@ -19,6 +23,7 @@ const SUPPORTED_LANGUAGES: ReadonlySet<string> = new Set<SupportedLanguage>([
   'go',
   'rust',
   'python',
+  'elixir',
 ]);
 
 /**

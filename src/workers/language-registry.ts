@@ -47,6 +47,11 @@ const CAPABILITIES: Record<SupportedLanguage, LspServerCapabilities> = {
     definitionProvider: true,
     signatureHelpProvider: true,
   },
+  elixir: {
+    hoverProvider: true,
+    definitionProvider: true,
+    signatureHelpProvider: true,
+  },
 };
 
 /**

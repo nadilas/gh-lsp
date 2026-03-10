@@ -153,7 +153,8 @@ export type SupportedLanguage =
   | 'javascript'
   | 'go'
   | 'rust'
-  | 'python';
+  | 'python'
+  | 'elixir';
 
 export type FileExtensionMap = Record<string, SupportedLanguage>;
 

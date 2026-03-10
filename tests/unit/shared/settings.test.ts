@@ -60,7 +60,7 @@ describe('DEFAULT_SETTINGS', () => {
       displayMode: 'popover',
       sidebarPosition: 'right',
       hoverDebounceMs: 300,
-      enabledLanguages: ['typescript', 'javascript', 'go', 'rust', 'python'],
+      enabledLanguages: ['typescript', 'javascript', 'go', 'rust', 'python', 'elixir'],
       cacheTimeoutMinutes: 10,
       workerIdleTimeoutMinutes: 5,
       maxConcurrentWorkers: 4,
@@ -110,6 +110,7 @@ describe('getSettings', () => {
       'go',
       'rust',
       'python',
+      'elixir',
     ]);
   });
 

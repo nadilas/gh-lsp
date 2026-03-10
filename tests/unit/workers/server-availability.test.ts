@@ -26,6 +26,10 @@ describe('isServerAvailable', () => {
   it('returns false for python', () => {
     expect(isServerAvailable('python')).toBe(false);
   });
+
+  it('returns true for elixir', () => {
+    expect(isServerAvailable('elixir')).toBe(true);
+  });
 });
 
 describe('getWorkerUrl', () => {
@@ -47,6 +51,10 @@ describe('getWorkerUrl', () => {
 
   it('returns null for python', () => {
     expect(getWorkerUrl('python')).toBeNull();
+  });
+
+  it('returns elixir-worker.js for elixir', () => {
+    expect(getWorkerUrl('elixir')).toBe('workers/elixir-worker.js');
   });
 });
 

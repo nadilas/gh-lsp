@@ -32,6 +32,13 @@ describe('getLanguageForExtension', () => {
     expect(getLanguageForExtension('.pyi')).toBe('python');
   });
 
+  it('maps Elixir extensions', () => {
+    expect(getLanguageForExtension('.ex')).toBe('elixir');
+    expect(getLanguageForExtension('.exs')).toBe('elixir');
+    expect(getLanguageForExtension('.heex')).toBe('elixir');
+    expect(getLanguageForExtension('.leex')).toBe('elixir');
+  });
+
   it('returns null for unknown extensions', () => {
     expect(getLanguageForExtension('.java')).toBeNull();
     expect(getLanguageForExtension('.rb')).toBeNull();
@@ -49,6 +56,9 @@ describe('getLanguageForExtension', () => {
     expect(getLanguageForExtension('.Go')).toBe('go');
     expect(getLanguageForExtension('.RS')).toBe('rust');
     expect(getLanguageForExtension('.PY')).toBe('python');
+    expect(getLanguageForExtension('.EX')).toBe('elixir');
+    expect(getLanguageForExtension('.EXS')).toBe('elixir');
+    expect(getLanguageForExtension('.HEEX')).toBe('elixir');
   });
 });
 
@@ -58,6 +68,8 @@ describe('getLanguageForFilePath', () => {
     expect(getLanguageForFilePath('main.go')).toBe('go');
     expect(getLanguageForFilePath('lib.rs')).toBe('rust');
     expect(getLanguageForFilePath('app.py')).toBe('python');
+    expect(getLanguageForFilePath('my_app.ex')).toBe('elixir');
+    expect(getLanguageForFilePath('test_helper.exs')).toBe('elixir');
   });
 
   it('extracts language from nested paths', () => {
@@ -65,6 +77,8 @@ describe('getLanguageForFilePath', () => {
     expect(getLanguageForFilePath('pkg/handler/main.go')).toBe('go');
     expect(getLanguageForFilePath('src/lib.rs')).toBe('rust');
     expect(getLanguageForFilePath('tests/test_main.py')).toBe('python');
+    expect(getLanguageForFilePath('lib/my_app/accounts.ex')).toBe('elixir');
+    expect(getLanguageForFilePath('test/my_app_test.exs')).toBe('elixir');
   });
 
   it('handles paths with multiple dots', () => {
@@ -106,6 +120,7 @@ describe('getWasmPath', () => {
     expect(getWasmPath('go')).toBe('lsp/wasm/go-server.wasm');
     expect(getWasmPath('rust')).toBe('lsp/wasm/rust-server.wasm');
     expect(getWasmPath('python')).toBe('lsp/wasm/python-server.wasm');
+    expect(getWasmPath('elixir')).toBe('lsp/wasm/elixir-server.wasm');
   });
 });
 
@@ -116,6 +131,7 @@ describe('isSupportedLanguage', () => {
     expect(isSupportedLanguage('go')).toBe(true);
     expect(isSupportedLanguage('rust')).toBe(true);
     expect(isSupportedLanguage('python')).toBe(true);
+    expect(isSupportedLanguage('elixir')).toBe(true);
   });
 
   it('returns false for unsupported languages', () => {

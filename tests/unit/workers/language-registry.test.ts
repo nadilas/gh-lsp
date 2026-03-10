@@ -54,6 +54,13 @@ describe('getCapabilities', () => {
     expect(caps.signatureHelpProvider).toBe(true);
   });
 
+  it('returns hover + definition + signatureHelp for Elixir', () => {
+    const caps = getCapabilities('elixir');
+    expect(caps.hoverProvider).toBe(true);
+    expect(caps.definitionProvider).toBe(true);
+    expect(caps.signatureHelpProvider).toBe(true);
+  });
+
   it('declares capabilities for all supported languages', () => {
     const languages: SupportedLanguage[] = [
       'typescript',
@@ -61,6 +68,7 @@ describe('getCapabilities', () => {
       'go',
       'rust',
       'python',
+      'elixir',
     ];
     for (const lang of languages) {
       const caps = getCapabilities(lang);

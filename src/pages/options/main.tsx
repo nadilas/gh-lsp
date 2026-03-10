@@ -27,6 +27,7 @@ const LANGUAGE_LABELS: Record<SupportedLanguage, string> = {
   go: 'Go',
   rust: 'Rust',
   python: 'Python',
+  elixir: 'Elixir',
 };
 
 const ALL_LANGUAGES: SupportedLanguage[] = [
@@ -35,6 +36,7 @@ const ALL_LANGUAGES: SupportedLanguage[] = [
   'go',
   'rust',
   'python',
+  'elixir',
 ];
 
 const SIDEBAR_POSITION_LABELS: Record<SidebarPosition, string> = {
