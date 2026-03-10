@@ -6,9 +6,10 @@
  * - **TypeScript/JavaScript**: Uses TypeScript's Language Service API directly
  *   (JavaScript-based, no WASM needed). Fully functional.
  *
- * - **Go (gopls)**: No WASM build exists. gopls is a native Go binary
- *   designed for LSP-over-stdio. Compiling to WASM is non-trivial due
- *   to Go runtime size and system dependencies. Not available for browser use.
+ * - **Go**: Uses web-tree-sitter with the Go grammar to provide hover and
+ *   go-to-definition. Since gopls cannot run in a browser (native binary),
+ *   we parse Go source with tree-sitter and walk the AST to resolve
+ *   identifiers, extract type information, and locate declarations.
  *
  * - **Rust (rust-analyzer)**: Experimental WASM build exists at
  *   github.com/rust-analyzer/rust-analyzer-wasm. Large binary (~10MB+).
@@ -30,6 +31,7 @@ const AVAILABLE_SERVERS: ReadonlySet<SupportedLanguage> = new Set([
   'typescript',
   'javascript',
   'elixir',
+  'go',
 ]);
 
 /**
@@ -55,6 +57,7 @@ export function getWorkerUrl(language: SupportedLanguage): string | null {
     case 'elixir':
       return 'workers/elixir-worker.js';
     case 'go':
+      return 'workers/go-worker.js';
     case 'rust':
     case 'python':
       return null;
@@ -69,7 +72,7 @@ export function getWorkerUrl(language: SupportedLanguage): string | null {
 export function getUnavailableReason(language: SupportedLanguage): string {
   switch (language) {
     case 'go':
-      return 'Go language server (gopls) is not yet available as a WASM binary for browser use.';
+      return 'Go language server is available via tree-sitter.';
     case 'rust':
       return 'Rust language server (rust-analyzer) WASM build is experimental and not yet integrated.';
     case 'python':

@@ -15,8 +15,8 @@ describe('isServerAvailable', () => {
     expect(isServerAvailable('javascript')).toBe(true);
   });
 
-  it('returns false for go', () => {
-    expect(isServerAvailable('go')).toBe(false);
+  it('returns true for go', () => {
+    expect(isServerAvailable('go')).toBe(true);
   });
 
   it('returns false for rust', () => {
@@ -41,8 +41,8 @@ describe('getWorkerUrl', () => {
     expect(getWorkerUrl('javascript')).toBe('workers/ts-worker.js');
   });
 
-  it('returns null for go', () => {
-    expect(getWorkerUrl('go')).toBeNull();
+  it('returns go-worker.js for go', () => {
+    expect(getWorkerUrl('go')).toBe('workers/go-worker.js');
   });
 
   it('returns null for rust', () => {
@@ -59,8 +59,8 @@ describe('getWorkerUrl', () => {
 });
 
 describe('getUnavailableReason', () => {
-  it('returns reason for go', () => {
-    expect(getUnavailableReason('go')).toContain('gopls');
+  it('returns reason for go (now available via tree-sitter)', () => {
+    expect(getUnavailableReason('go')).toContain('tree-sitter');
   });
 
   it('returns reason for rust', () => {
@@ -72,12 +72,11 @@ describe('getUnavailableReason', () => {
   });
 
   it('returns generic reason for unavailable languages', () => {
-    const allLanguages: SupportedLanguage[] = [
-      'go',
+    const unavailableLanguages: SupportedLanguage[] = [
       'rust',
       'python',
     ];
-    for (const lang of allLanguages) {
+    for (const lang of unavailableLanguages) {
       const reason = getUnavailableReason(lang);
       expect(reason.length).toBeGreaterThan(0);
     }
