@@ -31,3 +31,6 @@ coverage/
 
 # Safari build output
 dist/safari/
+
+# Release zip
+gh-lsp-chrome.zip

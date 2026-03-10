@@ -20,7 +20,9 @@
     "format": "prettier --write 'src/**/*.{ts,tsx,css}' 'tests/**/*.{ts,tsx}'",
     "format:check": "prettier --check 'src/**/*.{ts,tsx,css}' 'tests/**/*.{ts,tsx}'",
     "test:e2e": "playwright test",
-    "test:e2e:headed": "playwright test --headed"
+    "test:e2e:headed": "playwright test --headed",
+    "screenshots": "npx tsx scripts/take-screenshots.ts",
+    "build:zip": "pnpm build && cd dist/chrome && zip -r ../../gh-lsp-chrome.zip ."
   },
   "dependencies": {
     "dompurify": "^3.3.2",
