@@ -25,7 +25,7 @@
     "build:zip": "pnpm build && cd dist/chrome && zip -r ../../gh-lsp-chrome.zip ."
   },
   "dependencies": {
-    "dompurify": "^3.3.2",
+    "dompurify": "^3.4.0",
     "marked": "^17.0.4",
     "preact": "^10.25.0",
     "web-tree-sitter": "^0.26.6",
